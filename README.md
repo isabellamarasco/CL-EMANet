@@ -1,1 +1,1 @@
-# CL-EMANet
+# EMANet
