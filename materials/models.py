@@ -73,6 +73,7 @@ class EMAFCNet(nn.Module):
         n_layers: int = 4,
         hidden_dim: int = 128,
         dropout_rate: float = 0.5,
+        eta: float = 0.99,
     ) -> None:
         """
         Implements the proposed EMAFCNet, with the provided number of layers,
@@ -97,7 +98,7 @@ class EMAFCNet(nn.Module):
             input_dim=input_dim,
             n_type="minmax",
             use_running_stats=True,
-            momentum=0.99,
+            momentum=eta,
             eps=1e-6,
         )
         self.model = FCNet(

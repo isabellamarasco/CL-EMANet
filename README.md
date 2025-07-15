@@ -1,1 +1,1 @@
-# EMANet
+# ContinuousFlow-CIL

@@ -139,7 +139,16 @@ def test_on_previous_experiences(
     model.eval()
 
     # Test the model on all the previous timesteps
-    metrics_t = {"Acc": {}, "TPR": {}, "AUROC": {}}
+    metrics_t = {
+        "Acc": {},
+        "FPR": {},
+        "F1": {},
+        "Precision": {},
+        "Recall": {},
+        "AUROC": {},
+        "ROC": {},
+        "Confusion": {},
+    }
     total_acc, N_test = 0, 0  # Required to compute avg accuracy
     for t_test, (x_test, y_test) in enumerate(test_sets):
         # Deactivate gradient
@@ -162,12 +171,67 @@ def test_on_previous_experiences(
                 metrics.accuracy(y_pred_test, y_test.float().to(device), threshold=0.5),
                 4,
             )
-            metrics_t["TPR"][timesteps[t_test]] = round(
-                metrics.TPR(y_pred_test, y_test.float().to(device), threshold=0.5), 4
+            metrics_t["FPR"][timesteps[t_test]] = round(
+                metrics.FPR(y_pred_test, y_test.float().to(device), threshold=0.5),
+                4,
+            )
+            metrics_t["F1"][timesteps[t_test]] = round(
+                metrics.f1_score(y_pred_test, y_test.float().to(device), threshold=0.5),
+                4,
+            )
+            metrics_t["Precision"][timesteps[t_test]] = round(
+                metrics.precision(
+                    y_pred_test, y_test.float().to(device), threshold=0.5
+                ),
+                4,
+            )
+            metrics_t["Recall"][timesteps[t_test]] = round(
+                metrics.recall(y_pred_test, y_test.float().to(device), threshold=0.5),
+                4,
             )
             metrics_t["AUROC"][timesteps[t_test]] = round(
-                metrics.AUROC(y_pred_test, y_test.float().to(device)), 4
+                metrics.AUROC(y_pred_test, y_test.float().to(device)),
+                4,
             )
+            metrics_t["Confusion"][timesteps[t_test]] = metrics.confusion_matrix(
+                y_pred_test, y_test.float().to(device), threshold=0.5
+            )
+
     # Compute avg accuracy
     avg_acc = total_acc / N_test
     return metrics_t, avg_acc
+
+
+def compute_ROC(
+    model,
+    normalizer,
+    test_sets,
+    timesteps,
+):
+    # Get device
+    device = get_device()
+
+    # Switch model to eval
+    model.eval()
+
+    # Initialize roc curve list
+    roc_curve = []
+    for t_test, (x_test, y_test) in enumerate(test_sets):
+        # Deactivate gradient
+        with torch.no_grad():
+
+            # Normalize data if needed
+            x_test = normalizer(x_test)
+
+            # Compute prediction on (normalized) test set
+            y_pred_test = model(x_test.float().to(device))
+
+            # Compute ROC values
+            roc_curve.append(
+                metrics.ROC_curve(
+                    y_pred_test,
+                    y_test.long().to(device),
+                    n_samples=50,
+                )
+            )
+    return torch.stack(roc_curve)

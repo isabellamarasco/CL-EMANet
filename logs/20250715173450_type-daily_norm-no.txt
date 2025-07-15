@@ -1,0 +1,23 @@
+2025-07-15 17:34:50,632 - INFO - -- Dataset: CIC-IDS
+2025-07-15 17:34:50,632 - INFO - -- Continuous flow type: daily
+2025-07-15 17:34:50,632 - INFO - -- Normalization type: no
+2025-07-15 17:34:50,632 - INFO - -- eta: 0.99
+2025-07-15 17:34:56,351 - INFO - -- Not using buffer
+2025-07-15 17:34:57,329 - INFO - 
+-------------------------
+2025-07-15 17:34:57,378 - INFO - Timestep = Monday, Classes: [0: 476532, 1: 0]
+2025-07-15 17:34:57,535 - INFO - Major Classifier: 1.0000
+2025-07-15 17:34:57,690 - INFO - Random Classifier: 1.0000
+2025-07-15 17:37:52,223 - INFO - Avg Accuracy: 1.0000
+2025-07-15 17:37:52,223 - INFO - Accuracy: {'Monday': 1.0}
+2025-07-15 17:37:52,223 - INFO - FPR: {'Monday': 0.0}
+2025-07-15 17:37:52,223 - INFO - F1: {'Monday': 1.0}
+2025-07-15 17:37:52,223 - INFO - Precision: {'Monday': 1.0}
+2025-07-15 17:37:52,223 - INFO - Recall: {'Monday': 1.0}
+2025-07-15 17:37:52,223 - INFO - AUROC: {'Monday': 1.0}
+2025-07-15 17:37:52,223 - INFO - Confusion: (TP, TN, FP, FN) = {'Monday': (0.0, 52949.0, 0.0, 0.0)}
+2025-07-15 17:37:52,594 - INFO - 
+-------------------------
+2025-07-15 17:37:52,600 - INFO - Timestep = Tuesday, Classes: [0: 388647, 1: 12433]
+2025-07-15 17:37:52,771 - INFO - Major Classifier: 0.9690
+2025-07-15 17:37:52,941 - INFO - Random Classifier: 0.9394

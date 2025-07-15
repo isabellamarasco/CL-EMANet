@@ -1,18 +1,73 @@
+import argparse
 import logging
 from datetime import datetime
 
 import torch
 from torch import nn
 
-import config
 from materials import buffer, normalizers, trainers
 from utilities import miscellaneous
+
+
+########################################
+########### PARSE ARGUMENTS ############
+########################################
+def parse_args():
+    parser = argparse.ArgumentParser(description="Run continual learning model.")
+
+    # Dataset and experiment setup
+    parser.add_argument(
+        "--data_name", type=str, choices=["CIC-IDS", "UNSW-NB15"], default="CIC-IDS"
+    )
+    parser.add_argument(
+        "--continuous_flow_type", type=str, choices=["daily", "flow"], default="daily"
+    )
+    parser.add_argument(
+        "--normalization_type",
+        type=str,
+        choices=["no", "global", "local", "EMANet", "up_to"],
+        default="global",
+    )
+    parser.add_argument(
+        "--buffer_type", type=str, choices=["no", "random", "agem"], default="random"
+    )
+
+    # Buffer
+    parser.add_argument("--buffer_size", type=int, default=500_000)
+    parser.add_argument("--buffer_batch_size", type=int, default=20_000)
+
+    # Model
+    parser.add_argument("--n_layers", type=int, default=4)
+    parser.add_argument("--hidden_dim", type=int, default=128)
+    parser.add_argument("--dropout_rate", type=float, default=0.5)
+
+    # Training
+    parser.add_argument("--batch_size", type=int, default=20_000)
+    parser.add_argument("--n_epochs", type=int, default=20)
+    parser.add_argument("--learning_rate", type=float, default=5e-4)
+    parser.add_argument("--eta", type=float, default=0.99)
+
+    # Optional flow-related
+    parser.add_argument("--chunk_size", type=int, default=300_000)
+    parser.add_argument("--stride", type=int, default=100_000)
+
+    return parser.parse_args()
+
+
+cfg = parse_args()
+cfg.device = miscellaneous.get_device()
+
+if cfg.data_name == "CIC-IDS":
+    cfg.n_data = 2_827_876
+    cfg.input_dim = 68
+elif cfg.data_name == "UNSW-NB15":
+    cfg.n_data = 2_540_047
+    cfg.input_dim = 53
 
 ########################################
 ########### SETTING STUFF UP ###########
 ########################################
 # Load config
-cfg = config.UNSWNB15_Config()  # CICIDS_Config()
 print(f"Using device: {cfg.device}")
 
 ####### Create logger
@@ -42,6 +97,7 @@ logger.addHandler(console_handler)
 logging.info(f"-- Dataset: {cfg.data_name}")
 logging.info(f"-- Continuous flow type: {cfg.continuous_flow_type}")
 logging.info(f"-- Normalization type: {cfg.normalization_type}")
+logging.info(f"-- eta: {cfg.eta}")
 
 ########################################
 ###### LOAD DATA AND DEFINE MODEL ######
@@ -94,8 +150,6 @@ trainer = trainers.Trainer(
 minmax_list = []
 test_sets = []
 
-minmax_txt_path = f"./logs/{timestamps}_minmax_values.txt"
-
 for i in range(N):
     # Get data at time t
     x, y = data.input_output_split(i)
@@ -117,7 +171,6 @@ for i in range(N):
 
     # Normalize data
     x_train_norm = normalizer(x_train)
-    print(torch.norm(x_train_norm))
 
     # Send data to device and convert to float
     x_train_norm = x_train_norm.float().to(cfg.device)
@@ -161,9 +214,9 @@ for i in range(N):
     )
     logging.info(f"Avg Accuracy: {avg_acc:0.4f}")
     logging.info(f"Accuracy: {metrics_t['Acc']}")
-
-# Saving tensor of mx and Mx
-torch.save(
-    torch.stack(minmax_list, dim=0),
-    f"./logs/{timestamps}_minmax_tensor.pt",
-)
+    logging.info(f"FPR: {metrics_t['FPR']}")
+    logging.info(f"F1: {metrics_t['F1']}")
+    logging.info(f"Precision: {metrics_t['Precision']}")
+    logging.info(f"Recall: {metrics_t['Recall']}")
+    logging.info(f"AUROC: {metrics_t['AUROC']}")
+    logging.info(f"Confusion: (TP, TN, FP, FN) = {metrics_t['Confusion']}")
