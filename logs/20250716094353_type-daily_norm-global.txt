@@ -1,0 +1,36 @@
+2025-07-16 09:43:53,031 - INFO - -- Dataset: CIC-IDS
+2025-07-16 09:43:53,032 - INFO - -- Continuous flow type: daily
+2025-07-16 09:43:53,032 - INFO - -- Normalization type: global
+2025-07-16 09:43:53,032 - INFO - -- eta: 0.99
+2025-07-16 09:44:03,364 - INFO - -- Not using buffer
+2025-07-16 09:44:04,326 - INFO - 
+-------------------------
+2025-07-16 09:44:04,377 - INFO - Timestep = Monday, Classes: [0: 476532, 1: 0]
+2025-07-16 09:44:04,571 - INFO - Major Classifier: 1.0000
+2025-07-16 09:44:04,742 - INFO - Random Classifier: 1.0000
+2025-07-16 09:47:01,445 - INFO - Avg Accuracy: 1.0000
+2025-07-16 09:47:01,446 - INFO - Accuracy: {'Monday': 1.0}
+2025-07-16 09:47:01,446 - INFO - FPR: {'Monday': 0.0}
+2025-07-16 09:47:01,446 - INFO - F1: {'Monday': 1.0}
+2025-07-16 09:47:01,446 - INFO - Precision: {'Monday': 1.0}
+2025-07-16 09:47:01,446 - INFO - Recall: {'Monday': 1.0}
+2025-07-16 09:47:01,446 - INFO - AUROC: {'Monday': 1.0}
+2025-07-16 09:47:01,446 - INFO - Confusion: (TP, TN, FP, FN) = {'Monday': (0.0, 52949.0, 0.0, 0.0)}
+2025-07-16 09:47:01,822 - INFO - 
+-------------------------
+2025-07-16 09:47:01,828 - INFO - Timestep = Tuesday, Classes: [0: 388698, 1: 12382]
+2025-07-16 09:47:02,016 - INFO - Major Classifier: 0.9690
+2025-07-16 09:47:02,201 - INFO - Random Classifier: 0.9394
+2025-07-16 09:49:20,001 - INFO - Avg Accuracy: 0.9959
+2025-07-16 09:49:20,001 - INFO - Accuracy: {'Monday': 0.9993, 'Tuesday': 0.9918}
+2025-07-16 09:49:20,001 - INFO - FPR: {'Monday': 0.0007, 'Tuesday': 0.001}
+2025-07-16 09:49:20,001 - INFO - F1: {'Monday': 0.0, 'Tuesday': 0.8602}
+2025-07-16 09:49:20,001 - INFO - Precision: {'Monday': 0.0, 'Tuesday': 0.964}
+2025-07-16 09:49:20,001 - INFO - Recall: {'Monday': 1.0, 'Tuesday': 0.7766}
+2025-07-16 09:49:20,001 - INFO - AUROC: {'Monday': 1.0, 'Tuesday': 0.9989}
+2025-07-16 09:49:20,001 - INFO - Confusion: (TP, TN, FP, FN) = {'Monday': (0.0, 52914.0, 35.0, 0.0), 'Tuesday': (1126.0, 43073.0, 42.0, 324.0)}
+2025-07-16 09:49:20,610 - INFO - 
+-------------------------
+2025-07-16 09:49:20,616 - INFO - Timestep = Wednesday, Classes: [0: 395652, 1: 226603]
+2025-07-16 09:49:20,902 - INFO - Major Classifier: 0.6359
+2025-07-16 09:49:21,182 - INFO - Random Classifier: 0.5156

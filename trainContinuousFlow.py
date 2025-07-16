@@ -1,6 +1,7 @@
 import argparse
 import logging
 from datetime import datetime
+import os
 
 import torch
 from torch import nn
@@ -150,6 +151,9 @@ trainer = trainers.Trainer(
 minmax_list = []
 test_sets = []
 
+# To store accuracy and AUROC at each timestep
+experience_accuracies = []
+experience_aurocs = []
 for i in range(N):
     # Get data at time t
     x, y = data.input_output_split(i)
@@ -220,3 +224,27 @@ for i in range(N):
     logging.info(f"Recall: {metrics_t['Recall']}")
     logging.info(f"AUROC: {metrics_t['AUROC']}")
     logging.info(f"Confusion: (TP, TN, FP, FN) = {metrics_t['Confusion']}")
+
+    # Save test accuracy and AUROC for all past experiences, in order
+    current_accs = []
+    current_aurocs = []
+    for t in timesteps[: len(test_sets)]:  # only test_sets seen so far
+        current_accs.append(metrics_t["Acc"][t])
+        current_aurocs.append(metrics_t["AUROC"][t])
+
+    # Save as lists of lists (for each experience, all previous/tested ones)
+    experience_accuracies.append(current_accs)
+    experience_aurocs.append(current_aurocs)
+
+# Saving resulting metrics into prescribed tensor
+save_path = f"./results/{timestamps}_norm-{cfg.normalization_type}_buffer-{cfg.buffer_type}_acc_auroc.pt"
+os.makedirs("./results/", exist_ok=True)
+torch.save(
+    {
+        "accuracies_per_experience": experience_accuracies,
+        "aurocs_per_experience": experience_aurocs,
+        "timesteps": timesteps,
+    },
+    save_path,
+)
+logging.info(f"✅ Saved per-experience metrics to {save_path}")
