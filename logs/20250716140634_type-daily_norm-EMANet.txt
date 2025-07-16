@@ -1,0 +1,71 @@
+2025-07-16 14:06:34,639 - INFO - -- Dataset: CIC-IDS
+2025-07-16 14:06:34,639 - INFO - -- Continuous flow type: daily
+2025-07-16 14:06:34,639 - INFO - -- Normalization type: EMANet
+2025-07-16 14:06:34,640 - INFO - -- eta: 0.99
+2025-07-16 14:06:59,913 - INFO - -- Not using buffer
+2025-07-16 14:07:01,019 - INFO - 
+-------------------------
+2025-07-16 14:07:01,025 - INFO - Timestep = Monday, Classes: [0: 476532, 1: 0]
+2025-07-16 14:07:01,445 - INFO - Major Classifier: 1.0000
+2025-07-16 14:07:01,831 - INFO - Random Classifier: 1.0000
+2025-07-16 14:08:59,831 - INFO - Avg Accuracy: 1.0000
+2025-07-16 14:08:59,832 - INFO - Accuracy: {'Monday': 1.0}
+2025-07-16 14:08:59,832 - INFO - FPR: {'Monday': 0.0}
+2025-07-16 14:08:59,833 - INFO - F1: {'Monday': 1.0}
+2025-07-16 14:08:59,833 - INFO - Precision: {'Monday': 1.0}
+2025-07-16 14:08:59,833 - INFO - Recall: {'Monday': 1.0}
+2025-07-16 14:08:59,834 - INFO - AUROC: {'Monday': 1.0}
+2025-07-16 14:08:59,834 - INFO - Confusion: (TP, TN, FP, FN) = {'Monday': (0.0, 52949.0, 0.0, 0.0)}
+2025-07-16 14:09:00,959 - INFO - 
+-------------------------
+2025-07-16 14:09:00,960 - INFO - Timestep = Tuesday, Classes: [0: 388683, 1: 12397]
+2025-07-16 14:09:01,338 - INFO - Major Classifier: 0.9690
+2025-07-16 14:09:01,717 - INFO - Random Classifier: 0.9394
+2025-07-16 14:10:39,351 - INFO - Avg Accuracy: 0.9957
+2025-07-16 14:10:39,351 - INFO - Accuracy: {'Monday': 0.9989, 'Tuesday': 0.9919}
+2025-07-16 14:10:39,352 - INFO - FPR: {'Monday': 0.0011, 'Tuesday': 0.0012}
+2025-07-16 14:10:39,352 - INFO - F1: {'Monday': 0.0, 'Tuesday': 0.8627}
+2025-07-16 14:10:39,352 - INFO - Precision: {'Monday': 0.0, 'Tuesday': 0.9559}
+2025-07-16 14:10:39,353 - INFO - Recall: {'Monday': 1.0, 'Tuesday': 0.7861}
+2025-07-16 14:10:39,353 - INFO - AUROC: {'Monday': 1.0, 'Tuesday': 0.9986}
+2025-07-16 14:10:39,353 - INFO - Confusion: (TP, TN, FP, FN) = {'Monday': (0.0, 52893.0, 56.0, 0.0), 'Tuesday': (1128.0, 43078.0, 52.0, 307.0)}
+2025-07-16 14:10:41,058 - INFO - 
+-------------------------
+2025-07-16 14:10:41,060 - INFO - Timestep = Wednesday, Classes: [0: 395669, 1: 226586]
+2025-07-16 14:10:41,640 - INFO - Major Classifier: 0.6359
+2025-07-16 14:10:42,384 - INFO - Random Classifier: 0.5156
+2025-07-16 14:13:17,220 - INFO - Avg Accuracy: 0.9684
+2025-07-16 14:13:17,221 - INFO - Accuracy: {'Monday': 0.9733, 'Tuesday': 0.9409, 'Wednesday': 0.9824}
+2025-07-16 14:13:17,221 - INFO - FPR: {'Monday': 0.0267, 'Tuesday': 0.0278, 'Wednesday': 0.0197}
+2025-07-16 14:13:17,221 - INFO - F1: {'Monday': 0.0, 'Tuesday': 0.0008, 'Wednesday': 0.976}
+2025-07-16 14:13:17,222 - INFO - Precision: {'Monday': 0.0, 'Tuesday': 0.0008, 'Wednesday': 0.9663}
+2025-07-16 14:13:17,222 - INFO - Recall: {'Monday': 1.0, 'Tuesday': 0.0007, 'Wednesday': 0.986}
+2025-07-16 14:13:17,222 - INFO - AUROC: {'Monday': 1.0, 'Tuesday': 0.9046, 'Wednesday': 0.9983}
+2025-07-16 14:13:17,223 - INFO - Confusion: (TP, TN, FP, FN) = {'Monday': (0.0, 51534.0, 1415.0, 0.0), 'Tuesday': (1.0, 41932.0, 1198.0, 1434.0), 'Wednesday': (24774.0, 43149.0, 865.0, 352.0)}
+2025-07-16 14:13:18,272 - INFO - 
+-------------------------
+2025-07-16 14:13:18,274 - INFO - Timestep = Thursday, Classes: [0: 410774, 1: 1938]
+2025-07-16 14:13:18,655 - INFO - Major Classifier: 0.9953
+2025-07-16 14:13:19,037 - INFO - Random Classifier: 0.9906
+2025-07-16 14:15:01,853 - INFO - Avg Accuracy: 0.9299
+2025-07-16 14:15:01,854 - INFO - Accuracy: {'Monday': 1.0, 'Tuesday': 0.9678, 'Wednesday': 0.8085, 'Thursday': 0.9952}
+2025-07-16 14:15:01,854 - INFO - FPR: {'Monday': 0.0, 'Tuesday': 0.0, 'Wednesday': 0.0, 'Thursday': 0.0}
+2025-07-16 14:15:01,855 - INFO - F1: {'Monday': 1.0, 'Tuesday': 0.0, 'Wednesday': 0.6424, 'Thursday': 0.0}
+2025-07-16 14:15:01,855 - INFO - Precision: {'Monday': 1.0, 'Tuesday': 0.0, 'Wednesday': 1.0, 'Thursday': 0.0}
+2025-07-16 14:15:01,855 - INFO - Recall: {'Monday': 1.0, 'Tuesday': 0.0, 'Wednesday': 0.4732, 'Thursday': 0.0}
+2025-07-16 14:15:01,856 - INFO - AUROC: {'Monday': 1.0, 'Tuesday': 0.9032, 'Wednesday': 0.9565, 'Thursday': 0.9909}
+2025-07-16 14:15:01,856 - INFO - Confusion: (TP, TN, FP, FN) = {'Monday': (0.0, 52949.0, 0.0, 0.0), 'Tuesday': (0.0, 43130.0, 0.0, 1435.0), 'Wednesday': (11889.0, 44014.0, 0.0, 13237.0), 'Thursday': (0.0, 45636.0, 0.0, 221.0)}
+2025-07-16 14:15:03,637 - INFO - 
+-------------------------
+2025-07-16 14:15:03,638 - INFO - Timestep = Friday, Classes: [0: 372280, 1: 260166]
+2025-07-16 14:15:04,195 - INFO - Major Classifier: 0.5890
+2025-07-16 14:15:04,883 - INFO - Random Classifier: 0.4312
+2025-07-16 14:17:42,420 - INFO - Avg Accuracy: 0.9190
+2025-07-16 14:17:42,420 - INFO - Accuracy: {'Monday': 0.9961, 'Tuesday': 0.9628, 'Wednesday': 0.8009, 'Thursday': 0.8575, 'Friday': 0.9897}
+2025-07-16 14:17:42,421 - INFO - FPR: {'Monday': 0.0039, 'Tuesday': 0.0052, 'Wednesday': 0.0035, 'Thursday': 0.1383, 'Friday': 0.0044}
+2025-07-16 14:17:42,421 - INFO - F1: {'Monday': 0.0, 'Tuesday': 0.0012, 'Wednesday': 0.6258, 'Thursday': 0.0, 'Friday': 0.9873}
+2025-07-16 14:17:42,421 - INFO - Precision: {'Monday': 0.0, 'Tuesday': 0.0044, 'Wednesday': 0.9868, 'Thursday': 0.0, 'Friday': 0.9935}
+2025-07-16 14:17:42,421 - INFO - Recall: {'Monday': 1.0, 'Tuesday': 0.0007, 'Wednesday': 0.4581, 'Thursday': 0.0, 'Friday': 0.9811}
+2025-07-16 14:17:42,422 - INFO - AUROC: {'Monday': 1.0, 'Tuesday': 0.6775, 'Wednesday': 0.8906, 'Thursday': 0.774, 'Friday': 0.9987}
+2025-07-16 14:17:42,422 - INFO - Confusion: (TP, TN, FP, FN) = {'Monday': (0.0, 52741.0, 208.0, 0.0), 'Tuesday': (1.0, 42905.0, 225.0, 1434.0), 'Wednesday': (11511.0, 43860.0, 154.0, 13615.0), 'Thursday': (0.0, 39324.0, 6312.0, 221.0), 'Friday': (28079.0, 41469.0, 184.0, 540.0)}
+2025-07-16 14:17:42,426 - INFO - ✅ Saved per-experience metrics to ./results/20250716140634_norm-EMANet_buffer-no_acc_auroc.pt

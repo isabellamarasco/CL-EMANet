@@ -1,0 +1,4 @@
+2025-07-16 10:15:21,496 - INFO - -- Dataset: CIC-IDS
+2025-07-16 10:15:21,497 - INFO - -- Continuous flow type: daily
+2025-07-16 10:15:21,497 - INFO - -- Normalization type: no
+2025-07-16 10:15:21,497 - INFO - -- eta: 0.99
