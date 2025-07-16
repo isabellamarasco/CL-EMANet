@@ -12,8 +12,6 @@ Traditional normalization methods either rely on future data (global normalizati
 - Supporting plug-and-play use with popular replay-based continual learning strategies (Random, A-GEM).
 - Handling real-world cybersecurity benchmarks such as **CIC-IDS 2017** and **UNSW-NB15**.
 
----
-
 ## 📂 Project Structure
 
 ```
@@ -30,8 +28,6 @@ EMANet/
 └── README.md
 ```
 
----
-
 ## 🚀 Getting Started
 
 ### 1. Install Requirements
@@ -45,8 +41,6 @@ pip install -r requirements.txt
 ### 2. Dataset Setup
 
 Place the datasets (CIC-IDS 2017, UNSW-NB15) in the `data/` folder, or follow instructions in the paper for data preparation.
-
----
 
 ## 🧪 Running Experiments
 
@@ -79,8 +73,6 @@ python trainContinuousFlow.py \
   --n_epochs 20
 ```
 
----
-
 ## ⚙️ Arguments
 
 Below is a list of main command-line arguments supported by `trainContinuousFlow.py`:
@@ -99,14 +91,10 @@ Below is a list of main command-line arguments supported by `trainContinuousFlow
 | `--chunk_size` | (Flow mode) Size of each experience chunk | `300000` |
 | `--stride` | (Flow mode) Step between chunks | `100000` |
 
----
-
 ## 📈 Citation
 
 *Citation will be added upon acceptance. Stay tuned!*
 
----
-
 ## 📧 Contact
 
-For questions, please contact [Davide Evangelista](mailto:davide.evangelista5@unibo.it)
+For questions, please contact [Davide Evangelista](mailto:davide.evangelista5@unibo.it) or [Isabella Marasco](mailto:isabella.marasco4@unibo.it).
