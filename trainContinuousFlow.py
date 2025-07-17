@@ -1,7 +1,7 @@
 import argparse
 import logging
-from datetime import datetime
 import os
+from datetime import datetime
 
 import torch
 from torch import nn
@@ -49,8 +49,8 @@ def parse_args():
     parser.add_argument("--eta", type=float, default=0.99)
 
     # Optional flow-related
-    parser.add_argument("--chunk_size", type=int, default=300_000)
-    parser.add_argument("--stride", type=int, default=100_000)
+    parser.add_argument("--chunk_size", type=int, default=500_000)
+    parser.add_argument("--stride", type=int, default=500_000)
 
     return parser.parse_args()
 
@@ -63,7 +63,7 @@ if cfg.data_name == "CIC-IDS":
     cfg.input_dim = 68
 elif cfg.data_name == "UNSW-NB15":
     cfg.n_data = 2_540_047
-    cfg.input_dim = 53
+    cfg.input_dim = 51
 
 ########################################
 ########### SETTING STUFF UP ###########
@@ -247,4 +247,4 @@ torch.save(
     },
     save_path,
 )
-logging.info(f"✅ Saved per-experience metrics to {save_path}")
+logging.info(f"Saved per-experience metrics to {save_path}")

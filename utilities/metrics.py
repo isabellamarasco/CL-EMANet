@@ -1,8 +1,9 @@
 import torch
-import torchmetrics.functional.classification
-from . import miscellaneous
 import torchmetrics
+import torchmetrics.functional.classification
 from torch import nn
+
+from . import miscellaneous
 
 
 def MR(y_pred, y_true, threshold=0.5):
@@ -140,3 +141,32 @@ def f1_score(y_pred, y_true, threshold=0.5):
     if (p + r) == 0:
         return 0.0  # Handle case where both precision and recall are 0
     return 2 * (p * r) / (p + r)
+
+
+from typing import List
+
+
+def compute_forgetting(data):
+    """Compute the forgetting matrix for jagged accuracy data."""
+    F = []
+    for i, row in enumerate(data):
+        F_row = []
+        for j in range(len(row)):
+            max_diff = 0.0
+            for k in range(i):
+                if j < len(data[k]):
+                    diff = data[k][j] - row[j]
+                    if diff > max_diff:
+                        max_diff = diff
+            F_row.append(max_diff)
+        F.append(F_row)
+    return F
+
+
+def compute_average_forgetting(F):
+    """Compute average forgetting from the forgetting matrix."""
+    AvgF = [0.0]  # by convention, first value is zero
+    for i in range(1, len(F)):
+        avg_f = sum(F[i]) / i
+        AvgF.append(round(avg_f, 4))
+    return AvgF

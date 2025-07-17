@@ -112,7 +112,7 @@ class ContinualFlow(ContinualLearningData):
             stride = chunk_size
         self.stride = stride
 
-        self.timesteps = torch.arange(
+        self.timesteps = np.arange(
             0, math.ceil((n_data - chunk_size) / stride) + 1, step=1
         )
 
