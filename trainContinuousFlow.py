@@ -237,7 +237,7 @@ for i in range(N):
     experience_aurocs.append(current_aurocs)
 
 # Saving resulting metrics into prescribed tensor
-save_path = f"./results/{timestamps}_norm-{cfg.normalization_type}_buffer-{cfg.buffer_type}_acc_auroc.pt"
+save_path = f"./results/{timestamps}_norm-{cfg.normalization_type}_buffer-{cfg.buffer_type}_eta-{cfg.eta}_acc_auroc.pt"
 os.makedirs("./results/", exist_ok=True)
 torch.save(
     {
