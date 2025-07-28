@@ -1,8 +1,8 @@
-# EMANet: Exponential Moving Average Normalization for Continual Learning in Intrusion Detection Systems
+# On Normalization Issues in Continual Learning for Forgetting-Resilient IDS
 
 This repository provides the official implementation of **EMANet**, a novel normalization strategy for continual learning in network intrusion detection systems (IDS). EMANet dynamically adapts to evolving data distributions by using an Exponential Moving Average (EMA) of input statistics during training.
 
-This implementation is associated with our [AAAI 2025 paper submission].
+This implementation is associated with our [AAAI2025 paper submission].
 
 ## 📋 Overview
 
@@ -18,13 +18,19 @@ Traditional normalization methods either rely on future data (global normalizati
 EMANet/
 │
 ├── trainContinuousFlow.py   # Main training script
-├── config/                  # Configuration files
-├── data/                    # (Expected) data folders or download scripts
+├── tabulator.py             # Contains the script to generate the tables and plots used in the paper
+├── logs/                    # Output folder for loggers
+├── results/                 # Output folder for the experiments
+├── data/                    # (Must be created) folder to save the data
 ├── materials/               # Model, buffer, normalization, trainer modules
+├── materials/               # Some utilities functions for the main code
 ├── experiments/
-│   ├── CICIDS.sh            # Example experiment on CIC-IDS
-│   └── UNSW-NB15.sh         # Example experiment on UNSW-NB15
+│   ├── Ablation_CICIDS.sh   # To reproduce ablation study on CIC-IDS from the paper
+│   ├── Ablation_UNSW-NB15.sh# To reproduce ablation study on UNSW-NB15 from the paper
+│   ├── CICIDS.sh            # To reproduce experiment on CIC-IDS from the paper
+│   └── UNSW-NB15.sh         # To reproduce experiment on UNSW-NB15 from the paper
 ├── logs/                    # Training logs will be stored here
+├── requirements.txt         # The libraries required and the version used to run the experiments
 └── README.md
 ```
 
@@ -32,29 +38,26 @@ EMANet/
 
 ### 1. Install Requirements
 
-We recommend using Python 3.8+ and a virtual environment.
+We recommend using Python 3.10+.
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Dataset Setup
+### 2. Data download and preparation
 
-Place the datasets (CIC-IDS 2017, UNSW-NB15) in the `data/` folder, or follow instructions in the paper for data preparation.
+TODO: Place the datasets (CIC-IDS 2017, UNSW-NB15) in the `data/` folder, or follow instructions in the paper for data preparation.
 
-## 🧪 Running Experiments
+## 🧪 Running Experiments from the paper
 
 ### Option 1: Use Pre-defined Scripts
 
-Run one of the prepared experiment scripts:
+Run one of the prepared experiment scripts to replicate the experiments from the paper, once the data has been downloaded and processed as described above:
 
 ```bash
+bash experiments/Ablation_CICIDS.sh
+bash experiments/Ablation_UNSW-NB15.sh
 bash experiments/CICIDS.sh
-```
-
-or
-
-```bash
 bash experiments/UNSW-NB15.sh
 ```
 
@@ -64,8 +67,8 @@ You can run the training script manually with your desired configuration:
 
 ```bash
 python trainContinuousFlow.py \
-  --data_name CIC-IDS \
-  --continuous_flow_type daily \
+  --data_name UNSW-NB15 \
+  --continuous_flow_type flow \
   --normalization_type EMANet \
   --buffer_type agem \
   --buffer_size 500000 \
@@ -79,8 +82,8 @@ Below is a list of main command-line arguments supported by `trainContinuousFlow
 
 | Argument | Description | Default |
 |----------|-------------|---------|
-| `--data_name` | Dataset to use: `CIC-IDS` or `UNSW-NB15` | `CIC-IDS` |
-| `--continuous_flow_type` | Type of data stream: `daily` or `flow` | `daily` |
+| `--data_name` | Dataset to use: `CIC-IDS` or `UNSW-NB15` | `UNSW-NB15` |
+| `--continuous_flow_type` | Type of data stream: `daily` or `flow` | `flow` |
 | `--normalization_type` | Normalization method: `no`, `global`, `local`, `EMANet`, `up_to` | `global` |
 | `--buffer_type` | Replay strategy: `no`, `random`, `agem` | `random` |
 | `--buffer_size` | Total buffer size | `500000` |

@@ -21,14 +21,14 @@ def parse_args():
         "--data_name",
         type=str,
         choices=["CIC-IDS", "UNSW-NB15"],
-        default="CIC-IDS",
+        default="UNSW-NB15",
         help="A string identifying the dataset to use.",
     )
     parser.add_argument(
         "--continuous_flow_type",
         type=str,
         choices=["daily", "flow"],
-        default="daily",
+        default="flow",
         help="Type of continuous flow, 'daily' if the data supports authomatical division into experiences, 'flow' otherwise.",
     )
     parser.add_argument(

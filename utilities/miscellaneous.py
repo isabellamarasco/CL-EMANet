@@ -21,9 +21,9 @@ def get_CF_data(config):
     if config.data_name.lower() == "cic-ids":
         # Define data-path
         if config.normalization_type.lower() == "global":
-            data_path = "./data/normalizedCICIDS_2017_small.csv"
+            data_path = "./data/normalizedCICIDS_2017.csv"
         else:
-            data_path = "./data/CICIDS_2017_small.csv"
+            data_path = "./data/CICIDS_2017.csv"
 
         # Set other parameters
         target_columns = ["Label_bin"]
