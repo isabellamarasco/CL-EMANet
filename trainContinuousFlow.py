@@ -18,46 +18,124 @@ def parse_args():
 
     # Dataset and experiment setup
     parser.add_argument(
-        "--data_name", type=str, choices=["CIC-IDS", "UNSW-NB15"], default="CIC-IDS"
+        "--data_name",
+        type=str,
+        choices=["CIC-IDS", "UNSW-NB15"],
+        default="CIC-IDS",
+        help="A string identifying the dataset to use.",
     )
     parser.add_argument(
-        "--continuous_flow_type", type=str, choices=["daily", "flow"], default="daily"
+        "--continuous_flow_type",
+        type=str,
+        choices=["daily", "flow"],
+        default="daily",
+        help="Type of continuous flow, 'daily' if the data supports authomatical division into experiences, 'flow' otherwise.",
     )
     parser.add_argument(
         "--normalization_type",
         type=str,
-        choices=["no", "global", "local", "EMANet", "up_to"],
+        choices=["no", "global", "local", "EMANet"],
         default="global",
+        help="Type of normalization algorithm to use",
     )
     parser.add_argument(
-        "--buffer_type", type=str, choices=["no", "random", "agem"], default="random"
+        "--buffer_type",
+        type=str,
+        choices=["no", "random", "agem"],
+        default="random",
+        help="Type of buffer to use",
     )
 
     # Buffer
-    parser.add_argument("--buffer_size", type=int, default=500_000)
-    parser.add_argument("--buffer_batch_size", type=int, default=20_000)
+    parser.add_argument(
+        "--buffer_size", type=int, default=500_000, help="Maximum size of the buffer"
+    )
+    parser.add_argument(
+        "--buffer_batch_size",
+        type=int,
+        default=20_000,
+        help="Number of datapoints extracted from the buffer at each training iteration",
+    )
 
     # Model
-    parser.add_argument("--n_layers", type=int, default=4)
-    parser.add_argument("--hidden_dim", type=int, default=128)
-    parser.add_argument("--dropout_rate", type=float, default=0.5)
+    parser.add_argument(
+        "--n_layers",
+        type=int,
+        default=4,
+        help="Number of layers defining the baseline neural network",
+    )
+    parser.add_argument(
+        "--hidden_dim",
+        type=int,
+        default=128,
+        help="Number of neurons in each hidden layer defining the baseline neural network",
+    )
+    parser.add_argument(
+        "--dropout_rate",
+        type=float,
+        default=0.5,
+        help="Dropout value of the baseline neural network",
+    )
 
     # Training
-    parser.add_argument("--batch_size", type=int, default=20_000)
-    parser.add_argument("--n_epochs", type=int, default=20)
-    parser.add_argument("--learning_rate", type=float, default=5e-4)
-    parser.add_argument("--eta", type=float, default=0.99)
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=20_000,
+        help="Batch size used for training the model",
+    )
+    parser.add_argument(
+        "--n_epochs",
+        type=int,
+        default=20,
+        help="Number of epochs used for training the model",
+    )
+    parser.add_argument(
+        "--learning_rate",
+        type=float,
+        default=5e-4,
+        help="Learning rate used for training the model",
+    )
+    parser.add_argument(
+        "--eta",
+        type=float,
+        default=0.99,
+        help="Value of the momentum of EMA module when EMANet is chosen as normalization type",
+    )
 
     # Optional flow-related
-    parser.add_argument("--chunk_size", type=int, default=500_000)
-    parser.add_argument("--stride", type=int, default=500_000)
+    parser.add_argument(
+        "--chunk_size",
+        type=int,
+        default=500_000,
+        help="Number of elements per experience when synthetical chunks is used",
+    )
+    parser.add_argument(
+        "--stride",
+        type=int,
+        default=500_000,
+        help="Stride used to create syntetic chunks",
+    )
 
+    # Seed
+    parser.add_argument(
+        "--seed", type=str, default="None", help="Random seed (default: None)"
+    )
     return parser.parse_args()
 
 
 cfg = parse_args()
 cfg.device = miscellaneous.get_device()
 
+# Optional seeding
+if cfg.seed != "None":
+    seed = int(cfg.seed)
+    logging.info(f"Seeding execution with seed: {seed}")
+    torch.manual_seed(seed)
+else:
+    logging.info("No seed provided. Execution will be non-deterministic.")
+
+# Data setup
 if cfg.data_name == "CIC-IDS":
     cfg.n_data = 2_827_876
     cfg.input_dim = 68
