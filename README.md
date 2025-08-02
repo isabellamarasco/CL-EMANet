@@ -87,8 +87,8 @@ python preprocessing.py --data_name UNSW-NB --mode all
 Below is a list of main command-line arguments supported by `preprocessing.py`:
 
 | Argument | Description |
-|--------------|-------------|
-|  `--data_name`  | Dataset to use: `CIC-IDS`, `UNSW-NB15` or `all` | 
+|----------|-------------|
+| `--data_name` | Dataset to use: `CIC-IDS`, `UNSW-NB15` or `all`|
 | `--mode` | Type of preprocessing: `preprocess_only` (not global normalization), `normalize_only` (with global normalization) or `all`| 
 
 ## 🧪 Running Experiments from the paper
