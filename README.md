@@ -19,6 +19,7 @@ EMANet/
 │
 ├── trainContinuousFlow.py   # Main training script
 ├── tabulator.py             # Contains the script to generate the tables and plots used in the paper
+├── preprocessing.py         # Contains the script to preprocess the datasets.
 ├── logs/                    # Output folder for loggers
 ├── results/                 # Output folder for the experiments
 ├── data/                    # (Must be created) folder to save the data
@@ -28,6 +29,7 @@ EMANet/
 │   ├── Ablation_CICIDS.sh   # To reproduce ablation study on CIC-IDS from the paper
 │   ├── Ablation_UNSW-NB15.sh# To reproduce ablation study on UNSW-NB15 from the paper
 │   ├── CICIDS.sh            # To reproduce experiment on CIC-IDS from the paper
+│   └── preprocessing.sh     # To reproduce preprocessing on UNSW-NB15 and CIC-IDS from the paper
 │   └── UNSW-NB15.sh         # To reproduce experiment on UNSW-NB15 from the paper
 ├── logs/                    # Training logs will be stored here
 ├── requirements.txt         # The libraries required and the version used to run the experiments
@@ -45,9 +47,40 @@ pip install -r requirements.txt
 ```
 
 ### 2. Data download and preparation
+TODO: Place the datasets (CIC-IDS 2017, UNSW-NB15) in the `data/` folder.
 
-TODO: Place the datasets (CIC-IDS 2017, UNSW-NB15) in the `data/` folder, or follow instructions in the paper for data preparation.
+Download the datasets from the official sources:
+- **CIC-IDS 2017**: go to https://www.unb.ca/cic/datasets/ids-2017.html and click `Download this dataset`:
+  - Insert the requested information (name, email, etc.).
+  - Download the dataset `CIC-IDS-2017/CSVs/MachineLearningCSV.zip`
+  - Unzip the downloaded folder and rename it to `CIC-IDS-2017`
+  - Place the CSV files in the `data/` folder.
 
+- **UNSW-NB15**: go to https://research.unsw.edu.au/projects/unsw-nb15-dataset and click `HERE`:
+  - download the `CSV Files` folder
+  - unzip the downloaded folder and rename it in UNSW-NB15
+  - Maintain the following files: `UNSW-NB15_1.csv`, `UNSW-NB15_2.csv`, `UNSW-NB15_3.csv`, `UNSW-NB15_4.csv`, and `NUNSW-NB15_features.csv`.
+  - place the CSV files in the `data/` folder.
+
+#### Option 1: Use Pre-defined Scripts
+Run all preprocessing scripts to prepare the datasets:
+
+```bash
+bash experiments/preprocessing.sh
+```
+
+### Option 2: Custom Run with Arguments
+You can run the preprocessing script manually for each dataset and configuration:
+
+```bash
+python preprocessing.py --data_name CICIDS --mode preprocess_only
+python preprocessing.py --data_name CICIDS --mode normalize_only
+python preprocessing.py --data_name CICIDS --mode all
+
+python preprocessing.py --data_name UNSW-NB --mode preprocess_only
+python preprocessing.py --data_name UNSW-NB --mode normalize_only
+python preprocessing.py --data_name UNSW-NB --mode all
+```
 ## 🧪 Running Experiments from the paper
 
 ### Option 1: Use Pre-defined Scripts
