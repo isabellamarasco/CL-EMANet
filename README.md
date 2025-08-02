@@ -81,6 +81,16 @@ python preprocessing.py --data_name UNSW-NB --mode preprocess_only
 python preprocessing.py --data_name UNSW-NB --mode normalize_only
 python preprocessing.py --data_name UNSW-NB --mode all
 ```
+
+### ⚙️ Arguments
+
+Below is a list of main command-line arguments supported by `trainContinuousFlow.py`:
+
+| Argument | Description |
+|----------|-------------|
+| `--data_name` | Dataset to use: `CIC-IDS` or `UNSW-NB15` or `all` | 
+| `--mode` | Type of preprocessing: `preprocess_only` (not global normalization) or `normalize_only` (with global normalization) or `all`| 
+
 ## 🧪 Running Experiments from the paper
 
 ### Option 1: Use Pre-defined Scripts
