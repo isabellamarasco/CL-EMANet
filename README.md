@@ -57,10 +57,10 @@ Download the datasets from the official sources:
   - Place the CSV files in the `data/` folder.
 
 - **UNSW-NB15**: go to https://research.unsw.edu.au/projects/unsw-nb15-dataset and click `HERE`:
-  - download the `CSV Files` folder
-  - unzip the downloaded folder and rename it in UNSW-NB15
+  - Download the `CSV Files` folder
+  - Unzip the downloaded folder and rename it in UNSW-NB15
   - Maintain the following files: `UNSW-NB15_1.csv`, `UNSW-NB15_2.csv`, `UNSW-NB15_3.csv`, `UNSW-NB15_4.csv`, and `NUNSW-NB15_features.csv`.
-  - place the CSV files in the `data/` folder.
+  - Place the CSV files in the `data/` folder.
 
 #### Option 1: Use Pre-defined Scripts
 Run all preprocessing scripts to prepare the datasets:
