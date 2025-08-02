@@ -260,9 +260,9 @@ def preprocess_unsw(df=None):
 def normalize_unsw(df=None):
     """Apply global normalization to preprocessed UNSW-NB15 dataset"""
     if df is None:
-        if os.path.exists("data/UNSW-NB15_preprocessed.csv"):
+        if os.path.exists("data/UNSW-NB15.csv"):
             print("Loading preprocessed UNSW data...")
-            df = pd.read_csv("data/UNSW-NB15_preprocessed.csv")
+            df = pd.read_csv("data/UNSW-NB15.csv")
         else:
             print("Preprocessed data not found, running preprocessing...")
             df = preprocess_unsw()
@@ -298,14 +298,14 @@ def process_dataset(data_name, mode):
             "preprocess_func": preprocess_cicids,
             "normalize_func": normalize_cicids,
             "base_path": "data/CICIDS_2017",
-            "name": "CICIDS"
+            "name": "CICIDS_2017"
         },
         "UNSW-NB": {
             "merge_func": merge_unsw_files,
             "preprocess_func": preprocess_unsw,
             "normalize_func": normalize_unsw,
             "base_path": "data/UNSW-NB15",
-            "name": "UNSW"
+            "name": "UNSW-NB15"
         }
     }
 
