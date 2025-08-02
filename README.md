@@ -54,13 +54,13 @@ Download the datasets from the official sources:
   - Insert the requested information (name, email, etc.).
   - Download the dataset `CIC-IDS-2017/CSVs/MachineLearningCSV.zip`
   - Unzip the downloaded folder and rename it to `CIC-IDS-2017`
-  - Place the CSV files in the `data/` folder.
+  - Place the `CIC-IDS-2017` folder in the `data/` folder.
 
 - **UNSW-NB15**: go to https://research.unsw.edu.au/projects/unsw-nb15-dataset and click `HERE`:
   - Download the `CSV Files` folder
-  - Unzip the downloaded folder and rename it in UNSW-NB15
+  - Unzip the downloaded folder and rename it in `UNSW-NB15`
   - Maintain the following files: `UNSW-NB15_1.csv`, `UNSW-NB15_2.csv`, `UNSW-NB15_3.csv`, `UNSW-NB15_4.csv`, and `NUNSW-NB15_features.csv`.
-  - Place the CSV files in the `data/` folder.
+  - Place the folfer `UNSW-NB15` in the `data/` folder.
 
 #### Option 1: Use Pre-defined Scripts
 Run all preprocessing scripts to prepare the datasets:
