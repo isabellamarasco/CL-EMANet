@@ -140,7 +140,3 @@ Below is a list of main command-line arguments supported by `trainContinuousFlow
 ## 📈 Citation
 
 *Citation will be added upon acceptance. Stay tuned!*
-
-## 📧 Contact
-
-For questions, please contact [Davide Evangelista](mailto:davide.evangelista5@unibo.it) or [Isabella Marasco](mailto:isabella.marasco4@unibo.it).
