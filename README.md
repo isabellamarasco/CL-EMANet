@@ -7,9 +7,8 @@ This codebase now includes:
 - **Per‑epoch evaluation hooks** to visualize catastrophic forgetting.
 - Built‑in **plotting** and **cross‑run comparison** utilities directly from `train.py`.
 
-> This implementation relates to our AAAI 2025 submission (citation to be added).
+> This implementation relates to our ??? submission (citation to be added).
 
----
 
 ## 📋 Overview
 
@@ -18,7 +17,6 @@ Traditional normalization either relies on future data (global normalization) or
 - Enabling **plug‑and‑play** with replay and gradient‑projection methods.
 - Supporting real‑world IDS benchmarks: **CIC‑IDS 2017** and **UNSW‑NB15**.
 
----
 
 ## 📂 Project Structure
 
@@ -50,7 +48,6 @@ EMANet/
 └── README.md
 ```
 
----
 
 ## 🚀 Getting Started
 
@@ -100,7 +97,6 @@ python preprocessing.py --data_name UNSW-NB15 --mode all
 | `--data_name`  | Dataset: `CIC-IDS`, `UNSW-NB15`, or `all`                                   |
 | `--mode`       | `preprocess_only`, `normalize_only`, or `all`                               |
 
----
 
 ## 🧪 Running Experiments
 
@@ -146,7 +142,6 @@ python train.py --mode compare \
 - `results/<stamp>_..._per_epoch.csv` — tidy CSV: `experience_idx, epoch_idx, avg_acc_seen, acc_current`.
 - Plots (if `--plot`): aggregate mean curves across experiences and optionally per‑experience figures.
 
----
 
 ## ⚙️ Key Arguments
 
@@ -177,7 +172,6 @@ python train.py --mode compare \
 | `--compare_paths` | (compare) list of result `.pt` files | `None` |
 | `--smooth_window` | Moving‑average window (plots) | `1` |
 
----
 
 ## 🧠 Implemented CL Strategies (High‑level)
 
@@ -192,7 +186,6 @@ python train.py --mode compare \
 
 > All strategies work with **EMANet** or other normalization choices. Replay batches are normalized through the same normalizer during training.
 
----
 
 ## 📈 Visualization & Comparison
 
@@ -201,7 +194,6 @@ python train.py --mode compare \
   - `Acc(current)`: accuracy on the **current** test set after each epoch.
 - `train.py --mode compare` plots **mean curves across experiences** for multiple runs in a single figure, enabling quick method comparison.
 
----
 
 ## 🔧 Reproducibility Tips
 
@@ -209,7 +201,6 @@ python train.py --mode compare \
 - Keep `requirements.txt` pinned. If using GPUs/HPC, record CUDA/cuDNN and driver versions.
 - Save `--run_name` per run to keep plots and CSVs organized.
 
----
 
 ## 📄 Citation
 
