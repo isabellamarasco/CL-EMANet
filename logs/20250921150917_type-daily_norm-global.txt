@@ -1,0 +1,78 @@
+2025-09-21 15:09:17,553 - INFO - -- Dataset: CIC-IDS
+2025-09-21 15:09:17,553 - INFO - -- Continuous flow type: daily
+2025-09-21 15:09:17,553 - INFO - -- Normalization type: global
+2025-09-21 15:09:17,553 - INFO - -- Buffer type: der
+2025-09-21 15:09:17,553 - INFO - -- eta: 0.99
+2025-09-21 15:09:28,770 - INFO - 
+-------------------------
+2025-09-21 15:09:28,816 - INFO - Timestep = Monday, Classes: [0: 476532, 1: 0]
+2025-09-21 15:09:28,986 - INFO - Major Classifier: 1.0000
+2025-09-21 15:09:29,158 - INFO - Random Classifier: 1.0000
+2025-09-21 15:09:47,860 - INFO - [Eval e1] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:09:56,135 - INFO - [Eval e2] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:10:04,306 - INFO - [Eval e3] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:10:12,444 - INFO - [Eval e4] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:10:20,477 - INFO - [Eval e5] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:10:28,764 - INFO - [Eval e6] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:10:37,509 - INFO - [Eval e7] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:10:46,158 - INFO - [Eval e8] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:10:54,794 - INFO - [Eval e9] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:11:03,446 - INFO - [Eval e10] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:11:11,609 - INFO - [Eval e11] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:11:19,688 - INFO - [Eval e12] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:11:27,904 - INFO - [Eval e13] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:11:36,398 - INFO - [Eval e14] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:11:45,251 - INFO - [Eval e15] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:11:53,696 - INFO - [Eval e16] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:12:02,305 - INFO - [Eval e17] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:12:10,760 - INFO - [Eval e18] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:12:19,243 - INFO - [Eval e19] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:12:27,943 - INFO - [Eval e20] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:12:28,453 - INFO - Avg Accuracy: 1.0000
+2025-09-21 15:12:28,454 - INFO - Accuracy: {'Monday': 1.0}
+2025-09-21 15:12:28,454 - INFO - FPR: {'Monday': 0.0}
+2025-09-21 15:12:28,454 - INFO - F1: {'Monday': 1.0}
+2025-09-21 15:12:28,454 - INFO - Precision: {'Monday': 1.0}
+2025-09-21 15:12:28,454 - INFO - Recall: {'Monday': 1.0}
+2025-09-21 15:12:28,454 - INFO - AUROC: {'Monday': 1.0}
+2025-09-21 15:12:28,454 - INFO - Confusion: (TP, TN, FP, FN) = {'Monday': (0.0, 52949.0, 0.0, 0.0)}
+2025-09-21 15:12:28,860 - INFO - 
+-------------------------
+2025-09-21 15:12:28,867 - INFO - Timestep = Tuesday, Classes: [0: 388628, 1: 12452]
+2025-09-21 15:12:29,058 - INFO - Major Classifier: 0.9690
+2025-09-21 15:12:29,245 - INFO - Random Classifier: 0.9394
+2025-09-21 15:12:40,208 - INFO - [Eval e1] AvgAcc(seen): 0.9858 | Acc(current Tuesday): 0.9690
+2025-09-21 15:12:47,586 - INFO - [Eval e2] AvgAcc(seen): 0.9858 | Acc(current Tuesday): 0.9690
+2025-09-21 15:12:55,069 - INFO - [Eval e3] AvgAcc(seen): 0.9858 | Acc(current Tuesday): 0.9690
+2025-09-21 15:13:02,163 - INFO - [Eval e4] AvgAcc(seen): 0.9858 | Acc(current Tuesday): 0.9690
+2025-09-21 15:13:09,245 - INFO - [Eval e5] AvgAcc(seen): 0.9858 | Acc(current Tuesday): 0.9690
+2025-09-21 15:13:16,467 - INFO - [Eval e6] AvgAcc(seen): 0.9858 | Acc(current Tuesday): 0.9690
+2025-09-21 15:13:23,758 - INFO - [Eval e7] AvgAcc(seen): 0.9858 | Acc(current Tuesday): 0.9690
+2025-09-21 15:13:30,826 - INFO - [Eval e8] AvgAcc(seen): 0.9858 | Acc(current Tuesday): 0.9690
+2025-09-21 15:13:37,922 - INFO - [Eval e9] AvgAcc(seen): 0.9858 | Acc(current Tuesday): 0.9690
+2025-09-21 15:13:45,372 - INFO - [Eval e10] AvgAcc(seen): 0.9858 | Acc(current Tuesday): 0.9690
+2025-09-21 15:13:52,696 - INFO - [Eval e11] AvgAcc(seen): 0.9858 | Acc(current Tuesday): 0.9690
+2025-09-21 15:14:00,061 - INFO - [Eval e12] AvgAcc(seen): 0.9858 | Acc(current Tuesday): 0.9690
+2025-09-21 15:14:07,293 - INFO - [Eval e13] AvgAcc(seen): 0.9858 | Acc(current Tuesday): 0.9690
+2025-09-21 15:14:14,405 - INFO - [Eval e14] AvgAcc(seen): 0.9858 | Acc(current Tuesday): 0.9690
+2025-09-21 15:14:21,422 - INFO - [Eval e15] AvgAcc(seen): 0.9858 | Acc(current Tuesday): 0.9690
+2025-09-21 15:14:28,410 - INFO - [Eval e16] AvgAcc(seen): 0.9858 | Acc(current Tuesday): 0.9690
+2025-09-21 15:14:35,437 - INFO - [Eval e17] AvgAcc(seen): 0.9858 | Acc(current Tuesday): 0.9690
+2025-09-21 15:14:42,594 - INFO - [Eval e18] AvgAcc(seen): 0.9858 | Acc(current Tuesday): 0.9690
+2025-09-21 15:14:49,900 - INFO - [Eval e19] AvgAcc(seen): 0.9858 | Acc(current Tuesday): 0.9690
+2025-09-21 15:14:57,293 - INFO - [Eval e20] AvgAcc(seen): 0.9858 | Acc(current Tuesday): 0.9690
+2025-09-21 15:14:57,534 - INFO - Avg Accuracy: 0.9858
+2025-09-21 15:14:57,534 - INFO - Accuracy: {'Monday': 1.0, 'Tuesday': 0.969}
+2025-09-21 15:14:57,534 - INFO - FPR: {'Monday': 0.0, 'Tuesday': 0.0}
+2025-09-21 15:14:57,534 - INFO - F1: {'Monday': 1.0, 'Tuesday': 0.0}
+2025-09-21 15:14:57,534 - INFO - Precision: {'Monday': 1.0, 'Tuesday': 0.0}
+2025-09-21 15:14:57,535 - INFO - Recall: {'Monday': 1.0, 'Tuesday': 0.0}
+2025-09-21 15:14:57,535 - INFO - AUROC: {'Monday': 1.0, 'Tuesday': 0.4187}
+2025-09-21 15:14:57,535 - INFO - Confusion: (TP, TN, FP, FN) = {'Monday': (0.0, 52949.0, 0.0, 0.0), 'Tuesday': (0.0, 43185.0, 0.0, 1380.0)}
+2025-09-21 15:14:58,143 - INFO - 
+-------------------------
+2025-09-21 15:14:58,150 - INFO - Timestep = Wednesday, Classes: [0: 395801, 1: 226454]
+2025-09-21 15:14:58,443 - INFO - Major Classifier: 0.6359
+2025-09-21 15:14:58,726 - INFO - Random Classifier: 0.5156
+2025-09-21 15:15:11,861 - INFO - [Eval e1] AvgAcc(seen): 0.8402 | Acc(current Wednesday): 0.6347
+2025-09-21 15:15:23,066 - INFO - [Eval e2] AvgAcc(seen): 0.8402 | Acc(current Wednesday): 0.6347

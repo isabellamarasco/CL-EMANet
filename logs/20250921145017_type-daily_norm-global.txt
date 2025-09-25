@@ -1,0 +1,5 @@
+2025-09-21 14:50:17,467 - INFO - -- Dataset: CIC-IDS
+2025-09-21 14:50:17,467 - INFO - -- Continuous flow type: daily
+2025-09-21 14:50:17,467 - INFO - -- Normalization type: global
+2025-09-21 14:50:17,467 - INFO - -- Buffer type: er
+2025-09-21 14:50:17,467 - INFO - -- eta: 0.99

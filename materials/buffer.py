@@ -1,131 +1,283 @@
 import torch
 from torch import nn
+from typing import Tuple, Optional
 
 
 class Buffer:
+    """
+    Base memory buffer.
+
+    Stores pairs (x, y) as tensors:
+      - x: float32, shape (buffer_size, d)
+      - y: float32, shape (buffer_size, 1)  (for BCEWithLogitsLoss)
+    """
+
     def __init__(
         self, buffer_size: int, buffer_features: int, buffer_batch_size: int
     ) -> None:
-        """
-        Implements the basic module defining a Buffer, which should then be customized.
-        It provides some basic functionalities via the functions _update and _get which
-        updates the Buffer state by adding new data and returns a batch of data from the
-        Buffer, respectively. It expect each sub-class to have at least two functions:
-        * update(): to add elements on the Buffer, possibly employing _update().
-        * get(): to get a batch of data from the Buffer, possibly employing _get().
+        self.buffer_size: int = int(buffer_size)
+        self.buffer_features: int = int(buffer_features)
+        self.buffer_batch_size: int = int(buffer_batch_size)
 
-        Args:
-            buffer_size (int): The maximum dimensionality of the Buffer which can be
-                            used before it gets slowly overrided by new data.
-            buffer_features (int): The number of features memorized by the Buffer. It
-                            should correspond to the number of features of the data.
-            buffer_batch_size (int): The batch size for the Buffer. Determines the
-                            amount of data returned when _get() is called.
-        """
-        self.buffer_size: int = buffer_size
-        self.buffer_features: int = buffer_features
-        self.buffer_batch_size = buffer_batch_size
         self.is_full: bool = False
-        self.index_count: int = 0  # Counts which percentage of the Buffer is full
+        self.index_count: int = (
+            0  # how many items are currently filled (up to buffer_size)
+        )
+        self.seen_count: int = 0  # used by reservoir policy
 
+        # keep on CPU; trainer moves to device
         self.buffer_x = torch.zeros(
             (self.buffer_size, self.buffer_features), dtype=torch.float32
         )
-        self.buffer_y = torch.zeros((self.buffer_size, 1), dtype=torch.int64)
+        self.buffer_y = torch.zeros((self.buffer_size, 1), dtype=torch.float32)
 
-    def _update(self, x: torch.Tensor, y: torch.Tensor) -> None:
+        # For subclasses to identify themselves (used by the trainer)
+        self.buffer_type: str = "base"
+
+    # ---------------------
+    # Internal helpers
+    # ---------------------
+    def _append_until_full(self, x: torch.Tensor, y: torch.Tensor) -> int:
         """
-        Update the status of the Buffer. In particular, if the Buffer is still empty,
-        it just add the new data to the Buffer. If the Buffer is full, it samples the
-        required amount of data from the Buffer to get overrided by the new samples.
-
-        Args:
-            x (torch.Tensor): The new input data to be added to the Buffer, of shape (N, d).
-            y (torch.Tensor): The new output data to be added to the Buffer, of shape (N, 1).
+        Append sequentially while capacity remains. Returns how many samples were appended.
         """
-        # Convert x to float32
-        x = x.to(torch.float32)
+        if self.is_full or self.index_count >= self.buffer_size:
+            self.is_full = True
+            return 0
 
-        assert x.shape[0] == y.shape[0]
         N = x.shape[0]
-
-        if not self.is_full:
-            if self.index_count + N >= self.buffer_size:
-                self.buffer_x[self.index_count : self.buffer_size] = x[
-                    : self.buffer_size - self.index_count
-                ]
-                self.buffer_y[self.index_count : self.buffer_size] = y[
-                    : self.buffer_size - self.index_count
-                ].to(torch.int64)
+        end = min(self.index_count + N, self.buffer_size)
+        count = end - self.index_count
+        if count > 0:
+            self.buffer_x[self.index_count : end] = x[:count]
+            self.buffer_y[self.index_count : end] = y[:count]
+            self.index_count = end
+            if self.index_count >= self.buffer_size:
                 self.is_full = True
+        return count
 
-                self.update(
-                    x[self.buffer_size - self.index_count :],
-                    y[self.buffer_size - self.index_count :],
-                )
+    def _rand_overwrite(self, x: torch.Tensor, y: torch.Tensor) -> None:
+        """
+        Randomly overwrite memory with (x, y), with replacement (ER-style overwrite).
+        """
+        N = x.shape[0]
+        idx = torch.randint(0, self.buffer_size, (N,))
+        self.buffer_x[idx] = x
+        self.buffer_y[idx] = y
+        self.is_full = True
+        self.index_count = self.buffer_size
+
+    def _reservoir_insert(self, x: torch.Tensor, y: torch.Tensor) -> None:
+        """
+        True reservoir sampling (Vitter's algorithm, batched as a loop).
+        """
+        N = x.shape[0]
+        for k in range(N):
+            t = self.seen_count  # 0-based counter of seen items
+            if t < self.buffer_size:
+                self.buffer_x[t] = x[k]
+                self.buffer_y[t] = y[k]
+                self.index_count = t + 1
+                if self.index_count >= self.buffer_size:
+                    self.is_full = True
             else:
-                self.buffer_x[self.index_count : self.index_count + N] = x
-                self.buffer_y[self.index_count : self.index_count + N] = y
-            self.index_count = self.index_count + N
-        else:
-            self.index_count = torch.randint(0, self.buffer_size, (N,))
-            self.buffer_x[self.index_count] = x
-            self.buffer_y[self.index_count] = y.cpu().to(torch.int64)
+                j = torch.randint(0, t + 1, (1,)).item()
+                if j < self.buffer_size:
+                    self.buffer_x[j] = x[k]
+                    self.buffer_y[j] = y[k]
+            self.seen_count += 1
 
-    def _get(self) -> tuple[torch.Tensor, torch.Tensor]:
+    def _get(self) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Returns a batch of data randomly sampled from the Buffer.
+        Return a batch sampled uniformly from memory.
         """
-        # If buffer is not full, just just return all the buffer up to that point
+        if self.index_count == 0:
+            return self.buffer_x[:0], self.buffer_y[:0]
+
+        total = self.index_count if not self.is_full else self.buffer_size
+
+        if (not self.is_full) and (self.index_count <= self.buffer_batch_size):
+            return self.buffer_x[: self.index_count], self.buffer_y[: self.index_count]
+
+        if self.buffer_batch_size >= total:
+            return self.buffer_x[:total], self.buffer_y[:total]
+
+        idx = torch.randint(0, total, (self.buffer_batch_size,))
+        return self.buffer_x[idx], self.buffer_y[idx]
+
+    # ---------------------
+    # Public API to override
+    # ---------------------
+    def update(self, x: torch.Tensor, y: torch.Tensor, *args, **kwargs) -> None:
+        raise NotImplementedError
+
+    def get(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        raise NotImplementedError
+
+
+class ERBuffer(Buffer):
+    """
+    Classic Experience Replay:
+      - Store all seen samples (random overwrite when full).
+      - Sample uniformly from memory on demand.
+    """
+
+    def __init__(
+        self, buffer_size: int, buffer_features: int, buffer_batch_size: int
+    ) -> None:
+        super().__init__(buffer_size, buffer_features, buffer_batch_size)
+        self.buffer_type = "er"
+
+    def update(self, x: torch.Tensor, y: torch.Tensor, *_, **__) -> None:
+        if x.numel() == 0:
+            return
+        x = x.to(torch.float32)
+        if y.ndim == 1:
+            y = y.unsqueeze(1)
+        y = y.to(torch.float32)
+        appended = self._append_until_full(x, y)
+        if appended < x.shape[0]:
+            self._rand_overwrite(x[appended:], y[appended:])
+
+    def get(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        return self._get()
+
+
+class ReservoirBuffer(Buffer):
+    """
+    Reservoir Experience Replay:
+      - True reservoir sampling policy to decide which items stay in memory.
+      - Sampling uniformly at get().
+    """
+
+    def __init__(
+        self, buffer_size: int, buffer_features: int, buffer_batch_size: int
+    ) -> None:
+        super().__init__(buffer_size, buffer_features, buffer_batch_size)
+        self.buffer_type = "reservoir"
+
+    def update(self, x: torch.Tensor, y: torch.Tensor, *_, **__) -> None:
+        if x.numel() == 0:
+            return
+        x = x.to(torch.float32)
+        if y.ndim == 1:
+            y = y.unsqueeze(1)
+        y = y.to(torch.float32)
+        self._reservoir_insert(x, y)
+
+    def get(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        return self._get()
+
+
+class DERBuffer(Buffer):
+    """
+    Dark Experience Replay buffer:
+      - Stores (x, y, logits) where `logits` are the model outputs at storage time.
+      - get() returns (x, y, logits).
+    DER++ is supported in the trainer by adding CE on (x, y) from memory.
+    """
+
+    def __init__(
+        self,
+        buffer_size: int,
+        buffer_features: int,
+        buffer_batch_size: int,
+        logit_dim: int = 1,
+    ) -> None:
+        super().__init__(buffer_size, buffer_features, buffer_batch_size)
+        self.buffer_type = "der"
+        self.logit_dim = int(logit_dim)
+        self.buffer_logits = torch.zeros(
+            (self.buffer_size, self.logit_dim), dtype=torch.float32
+        )
+
+    def _append_logits_until_full(
+        self, x: torch.Tensor, y: torch.Tensor, z: torch.Tensor
+    ) -> int:
+        if self.is_full or self.index_count >= self.buffer_size:
+            self.is_full = True
+            return 0
+        N = x.shape[0]
+        end = min(self.index_count + N, self.buffer_size)
+        count = end - self.index_count
+        if count > 0:
+            self.buffer_x[self.index_count : end] = x[:count]
+            self.buffer_y[self.index_count : end] = y[:count]
+            self.buffer_logits[self.index_count : end] = z[:count]
+            self.index_count = end
+            if self.index_count >= self.buffer_size:
+                self.is_full = True
+        return count
+
+    def _rand_overwrite_logits(
+        self, x: torch.Tensor, y: torch.Tensor, z: torch.Tensor
+    ) -> None:
+        N = x.shape[0]
+        idx = torch.randint(0, self.buffer_size, (N,))
+        self.buffer_x[idx] = x
+        self.buffer_y[idx] = y
+        self.buffer_logits[idx] = z
+        self.is_full = True
+        self.index_count = self.buffer_size
+
+    def update(
+        self, x: torch.Tensor, y: torch.Tensor, logits: Optional[torch.Tensor] = None
+    ) -> None:
+        if x.numel() == 0:
+            return
+        x = x.to(torch.float32)
+        if y.ndim == 1:
+            y = y.unsqueeze(1)
+        y = y.to(torch.float32)
+
+        if logits is None:
+            # If not provided, store zeros (trainer should normally pass logits)
+            logits = torch.zeros((x.shape[0], self.logit_dim), dtype=torch.float32)
+        else:
+            if logits.ndim == 1:
+                logits = logits.unsqueeze(1)
+            logits = logits.to(torch.float32)
+
+        appended = self._append_logits_until_full(x, y, logits)
+        if appended < x.shape[0]:
+            self._rand_overwrite_logits(x[appended:], y[appended:], logits[appended:])
+
+    def get(self) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        if self.index_count == 0:
+            empty = self.buffer_x[:0]
+            return empty, empty, empty
+
+        total = self.index_count if not self.is_full else self.buffer_size
         if (not self.is_full) and (self.index_count <= self.buffer_batch_size):
             return (
                 self.buffer_x[: self.index_count],
                 self.buffer_y[: self.index_count],
+                self.buffer_logits[: self.index_count],
             )
 
-        # If buffer is full and batch_size = None, then return all the dataset
-        if self.buffer_batch_size >= self.buffer_size:
-            return (self.buffer_x, self.buffer_y)
+        if self.buffer_batch_size >= total:
+            return (
+                self.buffer_x[:total],
+                self.buffer_y[:total],
+                self.buffer_logits[:total],
+            )
 
-        # Else, randomly sample a batch from buffer and return it
-        idx = torch.randperm(self.buffer_size)[: self.buffer_batch_size]
-        return (self.buffer_x[idx], self.buffer_y[idx])
-
-
-class RandomBuffer(Buffer):
-    def __init__(
-        self, buffer_size: int, buffer_features: int, buffer_batch_size: int
-    ) -> None:
-        """
-        Implements the RandomBuffer, which is a Buffering technique where at each
-        experience, the data on which the model has been trained gets added to the Buffer,
-        either randomly or by following a rule. In this implementation, only True
-        attacks get added to the Buffer.
-
-        Args:
-            buffer_size (int): The maximum dimensionality of the Buffer which can be
-                            used before it gets slowly overrided by new data.
-            buffer_features (int): The number of features memorized by the Buffer. It
-                            should correspond to the number of features of the data.
-            buffer_batch_size (int): The batch size for the Buffer. Determines the
-                            amount of data returned when _get() is called.
-        """
-        super().__init__(buffer_size, buffer_features, buffer_batch_size)
-
-        self.buffer_type = "Random"
-
-    def update(
-        self, x: torch.Tensor, y: torch.Tensor, attacks_only: bool = True
-    ) -> None:
-        if attacks_only:
-            return self._update(x[y[:, 0].cpu() == 1], y[y[:, 0].cpu() == 1])
-        return self._update(x, y)
-
-    def get(self):
-        return self._get()
+        idx = torch.randint(0, total, (self.buffer_batch_size,))
+        return self.buffer_x[idx], self.buffer_y[idx], self.buffer_logits[idx]
 
 
 class AGEMBuffer(Buffer):
+    """
+    A-GEM (Averaged GEM) style buffer and gradient projector.
+
+    - Memory: ER-like (store all, random overwrite when full).
+    - At each step:
+        * Compute current gradient g on the current mini-batch.
+        * If memory not empty, sample a memory batch and compute g_ref.
+        * If g^T g_ref < 0, project: g <- g - (g^T g_ref / ||g_ref||^2) * g_ref
+        * Apply g as the model gradient.
+    """
+
     def __init__(
         self,
         buffer_size: int,
@@ -133,98 +285,79 @@ class AGEMBuffer(Buffer):
         buffer_batch_size: int,
         model: nn.Module,
     ) -> None:
-        """
-        Implements the A-GEM, which is a Buffering technique where at each
-        gradient step of the training, the gradient "g" computed on the data batch
-        gets compared with the gradient "g_ref" of the loss function over a batch
-        of the Buffer and, if g^T g_ref < 0, then g gets projected over the space defined
-        by g_ref. This reduces forgetting as it helps the gradient to never move
-        away from the region where the old data was correctly classified.
-
-        Args:
-            buffer_size (int): The maximum dimensionality of the Buffer which can be
-                            used before it gets slowly overrided by new data.
-            buffer_features (int): The number of features memorized by the Buffer. It
-                            should correspond to the number of features of the data.
-            buffer_batch_size (int): The batch size for the Buffer. Determines the
-                            amount of data returned when _get() is called.
-            model (nn.Module): The neural network model that is getting trained.
-        """
         super().__init__(buffer_size, buffer_features, buffer_batch_size)
-
-        self.buffer_type = "AGEM"
+        self.buffer_type = "agem"
         self.model = model
 
-    def update(
-        self, x: torch.Tensor, y: torch.Tensor, attacks_only: bool = True
-    ) -> None:
-        if attacks_only:
-            return self._update(x[y[:, 0].cpu() == 1], y[y[:, 0].cpu() == 1])
-        return self._update(x, y)
+    def update(self, x: torch.Tensor, y: torch.Tensor, *_, **__) -> None:
+        if x.numel() == 0:
+            return
+        x = x.to(torch.float32)
+        if y.ndim == 1:
+            y = y.unsqueeze(1)
+        y = y.to(torch.float32)
+        appended = self._append_until_full(x, y)
+        if appended < x.shape[0]:
+            self._rand_overwrite(x[appended:], y[appended:])
 
-    def get(self):
+    def get(self) -> Tuple[torch.Tensor, torch.Tensor]:
         return self._get()
 
-    def _project_gradient(self, g: torch.Tensor, g_ref: torch.Tensor) -> torch.Tensor:
-        """
-        Project "g" over the space defined by "g_ref".
-        """
-        g_ref_dot_g_ref = torch.dot(g_ref, g_ref)
-        if g_ref_dot_g_ref > 0:  # Avoid division by zero
-            alpha = torch.dot(g, g_ref) / g_ref_dot_g_ref
-            if alpha < 0:
-                g -= alpha * g_ref
-        return g
+    # --------- A-GEM helpers ---------
+    @torch.no_grad()
+    def _project_gradient_inplace(self, g: torch.Tensor, g_ref: torch.Tensor) -> None:
+        denom = torch.dot(g_ref, g_ref)
+        if denom.item() <= 0:
+            return
+        dot = torch.dot(g, g_ref)
+        if dot.item() < 0:
+            g -= (dot / denom) * g_ref  # in-place
 
-    def _compute_gradient(self, x, y, loss_fn):
-        """
-        Return the gradient of the loss with respect to the neural network
-        parameters, computed on the dataset (x, y) given as input.
-        """
-        self.model.zero_grad()
-
-        y_pred = self.model(x)
-        loss = loss_fn(y_pred, y.to(torch.float32))
-
-        # Calcola i gradienti senza modificarli nei parametri
-        grads = torch.autograd.grad(
-            loss, self.model.parameters(), create_graph=False, retain_graph=False
-        )
-
-        # Concatenazione dei gradienti in un unico vettore
-        g = torch.cat([grad.view(-1) for grad in grads if grad is not None])
-
-        return g, loss, y_pred
+    def _flatten_grads(self, params_iter):
+        flat = []
+        for p in params_iter:
+            if p.grad is None:
+                flat.append(torch.zeros(p.numel(), device=p.device, dtype=p.dtype))
+            else:
+                flat.append(p.grad.view(-1))
+        return torch.cat(flat, dim=0)
 
     def get_projected_gradient(
-        self, x, y, loss_fn
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+        self, x: torch.Tensor, y: torch.Tensor, loss_fn: nn.modules.loss._Loss
+    ):
         """
-        Computes the gradient for the current task and projects it
-        using memory constraints.
+        Compute logits, loss, and a projected flat gradient for the *current* batch.
+        Returns: flat_g, loss, y_pred
         """
-        g, loss, y_pred = self._compute_gradient(x, y, loss_fn)
+        if y.ndim == 1:
+            y = y.unsqueeze(1)
+        y = y.to(torch.float32)
 
+        # Current batch grad
+        self.model.zero_grad(set_to_none=True)
+        y_pred = self.model(x)
+        loss = loss_fn(y_pred, y)
+        loss.backward()
+
+        params = [p for p in self.model.parameters() if p.requires_grad]
+        flat_g = self._flatten_grads(params)
+
+        # Memory grad
         if self.index_count > 0:
-            # Compute reference gradient g_ref from buffer
             x_ref, y_ref = self._get()
-            x_ref, y_ref = x_ref.to(x.device), y_ref.to(y.device)
-            g_ref, _, _ = self._compute_gradient(x_ref, y_ref, loss_fn)
-            g_ref = g_ref.detach()
+            x_ref = x_ref.to(x.device, dtype=torch.float32)
+            if y_ref.ndim == 1:
+                y_ref = y_ref.unsqueeze(1)
+            y_ref = y_ref.to(y.device, dtype=torch.float32)
 
-            # Project gradient
-            g = self._project_gradient(g, g_ref)
-        return g, loss, y_pred
+            self.model.zero_grad(set_to_none=True)
+            y_ref_pred = self.model(x_ref)
+            ref_loss = loss_fn(y_ref_pred, y_ref)
+            ref_loss.backward()
+            flat_g_ref = self._flatten_grads(params).detach()
 
-    def apply_gradient(self, model, g):
-        """
-        Injects the computed gradient "g" from the previous functions onto the
-        neural network to prepare it to get optimized.
-        """
-        # Apply gradient manually
-        idx = 0
-        for p in model.parameters():
-            num_params = p.numel()
-            if p.grad is not None:
-                p.grad.copy_(g[idx : idx + num_params].view(p.shape))
-            idx += num_params
+            flat_g_proj = flat_g.clone()
+            self._project_gradient_inplace(flat_g_proj, flat_g_ref)
+            return flat_g_proj, loss, y_pred
+
+        return flat_g, loss, y_pred

@@ -1,0 +1,59 @@
+2025-09-21 15:30:49,643 - INFO - -- Dataset: CIC-IDS
+2025-09-21 15:30:49,643 - INFO - -- Continuous flow type: daily
+2025-09-21 15:30:49,643 - INFO - -- Normalization type: global
+2025-09-21 15:30:49,643 - INFO - -- Buffer type: no
+2025-09-21 15:30:49,643 - INFO - -- eta: 0.99
+2025-09-21 15:30:59,459 - INFO - -- Not using memory buffer
+2025-09-21 15:31:00,223 - INFO - 
+-------------------------
+2025-09-21 15:31:00,264 - INFO - Timestep = Monday, Classes: [0: 476532, 1: 0]
+2025-09-21 15:31:00,424 - INFO - Major Classifier: 1.0000
+2025-09-21 15:31:00,588 - INFO - Random Classifier: 1.0000
+2025-09-21 15:31:18,881 - INFO - [Eval e1] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:31:26,871 - INFO - [Eval e2] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:31:34,802 - INFO - [Eval e3] AvgAcc(seen): 1.0000 | Acc(current Monday): 1.0000
+2025-09-21 15:31:34,839 - INFO - Avg Accuracy: 1.0000
+2025-09-21 15:31:34,839 - INFO - Accuracy: {'Monday': 1.0}
+2025-09-21 15:31:34,839 - INFO - FPR: {'Monday': 0.0}
+2025-09-21 15:31:34,839 - INFO - F1: {'Monday': 1.0}
+2025-09-21 15:31:34,839 - INFO - Precision: {'Monday': 1.0}
+2025-09-21 15:31:34,839 - INFO - Recall: {'Monday': 1.0}
+2025-09-21 15:31:34,839 - INFO - AUROC: {'Monday': 1.0}
+2025-09-21 15:31:34,839 - INFO - Confusion: (TP, TN, FP, FN) = {'Monday': (0.0, 52949.0, 0.0, 0.0)}
+2025-09-21 15:31:35,160 - INFO - 
+-------------------------
+2025-09-21 15:31:35,166 - INFO - Timestep = Tuesday, Classes: [0: 388605, 1: 12475]
+2025-09-21 15:31:35,343 - INFO - Major Classifier: 0.9690
+2025-09-21 15:31:35,518 - INFO - Random Classifier: 0.9394
+2025-09-21 15:31:42,437 - INFO - [Eval e1] AvgAcc(seen): 0.9861 | Acc(current Tuesday): 0.9696
+2025-09-21 15:31:49,157 - INFO - [Eval e2] AvgAcc(seen): 0.9861 | Acc(current Tuesday): 0.9696
+2025-09-21 15:31:55,889 - INFO - [Eval e3] AvgAcc(seen): 0.9861 | Acc(current Tuesday): 0.9696
+2025-09-21 15:31:55,965 - INFO - Avg Accuracy: 0.9861
+2025-09-21 15:31:55,965 - INFO - Accuracy: {'Monday': 1.0, 'Tuesday': 0.9696}
+2025-09-21 15:31:55,965 - INFO - FPR: {'Monday': 0.0, 'Tuesday': 0.0}
+2025-09-21 15:31:55,965 - INFO - F1: {'Monday': 1.0, 'Tuesday': 0.0}
+2025-09-21 15:31:55,965 - INFO - Precision: {'Monday': 1.0, 'Tuesday': 0.0}
+2025-09-21 15:31:55,965 - INFO - Recall: {'Monday': 1.0, 'Tuesday': 0.0}
+2025-09-21 15:31:55,965 - INFO - AUROC: {'Monday': 1.0, 'Tuesday': 0.9718}
+2025-09-21 15:31:55,965 - INFO - Confusion: (TP, TN, FP, FN) = {'Monday': (0.0, 52949.0, 0.0, 0.0), 'Tuesday': (0.0, 43208.0, 0.0, 1357.0)}
+2025-09-21 15:31:56,427 - INFO - 
+-------------------------
+2025-09-21 15:31:56,432 - INFO - Timestep = Wednesday, Classes: [0: 395746, 1: 226509]
+2025-09-21 15:31:56,704 - INFO - Major Classifier: 0.6359
+2025-09-21 15:31:56,974 - INFO - Random Classifier: 0.5156
+2025-09-21 15:32:07,769 - INFO - [Eval e1] AvgAcc(seen): 0.8406 | Acc(current Wednesday): 0.6355
+2025-09-21 15:32:18,284 - INFO - [Eval e2] AvgAcc(seen): 0.8958 | Acc(current Wednesday): 0.8174
+2025-09-21 15:32:28,855 - INFO - [Eval e3] AvgAcc(seen): 0.9231 | Acc(current Wednesday): 0.8423
+2025-09-21 15:32:28,997 - INFO - Avg Accuracy: 0.9231
+2025-09-21 15:32:28,997 - INFO - Accuracy: {'Monday': 0.994, 'Tuesday': 0.9641, 'Wednesday': 0.8423}
+2025-09-21 15:32:28,997 - INFO - FPR: {'Monday': 0.006, 'Tuesday': 0.0056, 'Wednesday': 0.013}
+2025-09-21 15:32:28,997 - INFO - F1: {'Monday': 0.0, 'Tuesday': 0.0, 'Wednesday': 0.7318}
+2025-09-21 15:32:28,997 - INFO - Precision: {'Monday': 0.0, 'Tuesday': 0.0, 'Wednesday': 0.9632}
+2025-09-21 15:32:28,997 - INFO - Recall: {'Monday': 1.0, 'Tuesday': 0.0, 'Wednesday': 0.5901}
+2025-09-21 15:32:28,997 - INFO - AUROC: {'Monday': 1.0, 'Tuesday': 0.7378, 'Wednesday': 0.973}
+2025-09-21 15:32:28,997 - INFO - Confusion: (TP, TN, FP, FN) = {'Monday': (0.0, 52633.0, 316.0, 0.0), 'Tuesday': (0.0, 42965.0, 243.0, 1357.0), 'Wednesday': (14872.0, 43368.0, 569.0, 10331.0)}
+2025-09-21 15:32:29,338 - INFO - 
+-------------------------
+2025-09-21 15:32:29,343 - INFO - Timestep = Thursday, Classes: [0: 410774, 1: 1938]
+2025-09-21 15:32:29,521 - INFO - Major Classifier: 0.9953
+2025-09-21 15:32:29,700 - INFO - Random Classifier: 0.9906

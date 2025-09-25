@@ -1,0 +1,11 @@
+2025-09-21 15:25:50,280 - INFO - -- Dataset: UNSW-NB15
+2025-09-21 15:25:50,280 - INFO - -- Continuous flow type: flow
+2025-09-21 15:25:50,280 - INFO - -- Normalization type: global
+2025-09-21 15:25:50,280 - INFO - -- Buffer type: reservoir
+2025-09-21 15:25:50,280 - INFO - -- eta: 0.99
+2025-09-21 15:25:50,308 - INFO - -- Using ReservoirBuffer
+2025-09-21 15:25:52,537 - INFO - 
+-------------------------
+2025-09-21 15:25:52,577 - INFO - Timestep = 0, Classes: [0: 430003, 1: 19997]
+2025-09-21 15:25:54,273 - INFO - Major Classifier: 0.9556
+2025-09-21 15:25:55,990 - INFO - Random Classifier: 0.9151

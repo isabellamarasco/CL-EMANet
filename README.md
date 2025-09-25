@@ -1,142 +1,217 @@
-# On Normalization Issues in Continual Learning for Forgetting-Resilient IDS
+# On Normalization Issues in Continual Learning for Forgetting‑Resilient IDS
 
-This repository provides the official implementation of **EMANet**, a novel normalization strategy for continual learning in network intrusion detection systems (IDS). EMANet dynamically adapts to evolving data distributions by using an Exponential Moving Average (EMA) of input statistics during training.
+This repository provides the official implementation of **EMANet**, a normalization strategy for continual learning in network intrusion detection systems (IDS). EMANet dynamically adapts to evolving data distributions using an Exponential Moving Average (EMA) of input statistics during training and plugs into a variety of continual‑learning strategies.
 
-This implementation is associated with our [AAAI2025 paper submission].
+This codebase now includes:
+- Multiple CL methods: **ER**, **Reservoir ER**, **DER/DER++**, **A‑GEM**, **OGD**, **EWC**, **LwF**, and **No‑buffer** baseline.
+- **Per‑epoch evaluation hooks** to visualize catastrophic forgetting.
+- Built‑in **plotting** and **cross‑run comparison** utilities directly from `train.py`.
+
+> This implementation relates to our AAAI 2025 submission (citation to be added).
+
+---
 
 ## 📋 Overview
 
-Traditional normalization methods either rely on future data (global normalization) or suffer from instability and forgetting (local normalization). **EMANet** overcomes these limitations by:
+Traditional normalization either relies on future data (global normalization) or becomes unstable (local normalization). **EMANet** overcomes these issues by:
+- Using a **learnable min‑max normalization layer** updated via EMA.
+- Enabling **plug‑and‑play** with replay and gradient‑projection methods.
+- Supporting real‑world IDS benchmarks: **CIC‑IDS 2017** and **UNSW‑NB15**.
 
-- Using a learnable min-max normalization layer updated via EMA.
-- Supporting plug-and-play use with popular replay-based continual learning strategies (Random, A-GEM).
-- Handling real-world cybersecurity benchmarks such as **CIC-IDS 2017** and **UNSW-NB15**.
+---
 
 ## 📂 Project Structure
 
 ```
 EMANet/
 │
-├── trainContinuousFlow.py   # Main training script
-├── tabulator.py             # Contains the script to generate the tables and plots used in the paper
-├── preprocessing.py         # Contains the script to preprocess the datasets.
-├── logs/                    # Output folder for loggers
-├── results/                 # Output folder for the experiments
-├── data/                    # (Must be created) folder to save the data
-├── materials/               # Model, buffer, normalization, trainer modules
-├── materials/               # Some utilities functions for the main code
+├── train.py                 # Main script: training, logging, plotting, comparison
+├── preprocessing.py         # Dataset preprocessing and (optional) global normalization
+├── tabulator.py             # Paper tables/plots (optional; your script)
+├── materials/
+│   ├── buffer.py            # Buffer & CL strategies (ER, Reservoir, DER, A-GEM) + utilities
+│   ├── trainers.py          # Trainer w/ OGD, EWC, LwF, DER/DER++ logic + per-epoch callbacks
+│   ├── normalizers.py       # EMANet, global, local, no-normalization (plug-in API)
+│   └── models.py            # Baseline classifier(s)
+├── utilities/
+│   ├── miscellaneous.py     # Data loader, model/normalizer factories, evaluation helpers
+│   └── metrics.py           # Accuracy/AUROC/F1 etc.
 ├── experiments/
-│   ├── Ablation_CICIDS.sh   # To reproduce ablation study on CIC-IDS from the paper
-│   ├── Ablation_UNSW-NB15.sh# To reproduce ablation study on UNSW-NB15 from the paper
-│   ├── CICIDS.sh            # To reproduce experiment on CIC-IDS from the paper
-│   └── preprocessing.sh     # To reproduce preprocessing on UNSW-NB15 and CIC-IDS from the paper
-│   └── UNSW-NB15.sh         # To reproduce experiment on UNSW-NB15 from the paper
-├── logs/                    # Training logs will be stored here
-├── requirements.txt         # The libraries required and the version used to run the experiments
+│   ├── preprocessing.sh     # Preprocess CIC-IDS & UNSW-NB15
+│   ├── CICIDS.sh            # Example end-to-end run
+│   ├── UNSW-NB15.sh         # Example end-to-end run
+│   ├── Ablation_CICIDS.sh   # Paper ablation
+│   └── Ablation_UNSW-NB15.sh# Paper ablation
+├── data/                    # Place datasets here (created by you)
+├── logs/                    # Training logs
+├── results/                 # Experiment outputs (.pt bundles + CSVs)
+├── plots/                   # Saved figures (aggregate & per-experience, comparisons)
+├── requirements.txt
 └── README.md
 ```
 
+---
+
 ## 🚀 Getting Started
 
-### 1. Install Requirements
+### 1) Install Requirements
 
-We recommend using Python 3.10+.
+We recommend Python 3.10+.
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Data download and preparation
-TODO: Place the datasets (CIC-IDS 2017, UNSW-NB15) in the `data/` folder.
+### 2) Data Download and Preparation
 
-Download the datasets from the official sources:
-- **CIC-IDS 2017**: go to https://www.unb.ca/cic/datasets/ids-2017.html and click `Download this dataset`:
-  - Insert the requested information (name, email, etc.).
-  - Download the dataset `CIC-IDS-2017/CSVs/MachineLearningCSV.zip`
-  - Unzip the downloaded folder and rename it to `CIC-IDS-2017`
-  - Place the `CIC-IDS-2017` folder in the `data/` folder.
+Place the datasets in the `data/` folder.
 
-- **UNSW-NB15**: go to https://research.unsw.edu.au/projects/unsw-nb15-dataset and click `HERE`:
-  - Download the `CSV Files` folder
-  - Unzip the downloaded folder and rename it in `UNSW-NB15`
-  - Maintain the following files: `UNSW-NB15_1.csv`, `UNSW-NB15_2.csv`, `UNSW-NB15_3.csv`, `UNSW-NB15_4.csv`, and `NUNSW-NB15_features.csv`.
-  - Place the folfer `UNSW-NB15` in the `data/` folder.
+- **CIC‑IDS 2017**  
+  1) Download `CIC-IDS-2017/CSVs/MachineLearningCSV.zip` from the official page.  
+  2) Unzip and rename to `CIC-IDS-2017`.  
+  3) Move `data/CIC-IDS-2017/` into this repo.
 
-#### Option 1: Use Pre-defined Scripts
-Run all preprocessing scripts to prepare the datasets:
+- **UNSW‑NB15**  
+  1) Download the **CSV Files** bundle from the official page.  
+  2) Unzip and rename to `UNSW-NB15`.  
+  3) Keep: `UNSW-NB15_1.csv`, `UNSW-NB15_2.csv`, `UNSW-NB15_3.csv`, `UNSW-NB15_4.csv`, and `UNSW-NB15_features.csv`.  
+  4) Move `data/UNSW-NB15/` into this repo.
 
+#### Option A — Predefined Script
 ```bash
 bash experiments/preprocessing.sh
 ```
 
-### Option 2: Custom Run with Arguments
-You can run the preprocessing script manually for each dataset and configuration:
-
+#### Option B — Manual
 ```bash
-python preprocessing.py --data_name CICIDS --mode preprocess_only
-python preprocessing.py --data_name CICIDS --mode normalize_only
-python preprocessing.py --data_name CICIDS --mode all
+python preprocessing.py --data_name CIC-IDS  --mode preprocess_only
+python preprocessing.py --data_name CIC-IDS  --mode normalize_only
+python preprocessing.py --data_name CIC-IDS  --mode all
 
-python preprocessing.py --data_name UNSW-NB --mode preprocess_only
-python preprocessing.py --data_name UNSW-NB --mode normalize_only
-python preprocessing.py --data_name UNSW-NB --mode all
+python preprocessing.py --data_name UNSW-NB15 --mode preprocess_only
+python preprocessing.py --data_name UNSW-NB15 --mode normalize_only
+python preprocessing.py --data_name UNSW-NB15 --mode all
 ```
 
-### ⚙️ Arguments
+**`preprocessing.py` main flags**
 
-Below is a list of main command-line arguments supported by `preprocessing.py`:
+| Argument       | Description                                                                 |
+|----------------|-----------------------------------------------------------------------------|
+| `--data_name`  | Dataset: `CIC-IDS`, `UNSW-NB15`, or `all`                                   |
+| `--mode`       | `preprocess_only`, `normalize_only`, or `all`                               |
 
-| Argument | Description |
-|----------|-------------|
-| `--data_name` | Dataset to use: `CIC-IDS`, `UNSW-NB15` or `all`|
-| `--mode` | Type of preprocessing: `preprocess_only` (not global normalization), `normalize_only` (with global normalization) or `all`| 
+---
 
-## 🧪 Running Experiments from the paper
+## 🧪 Running Experiments
 
-### Option 1: Use Pre-defined Scripts
-
-Run one of the prepared experiment scripts to replicate the experiments from the paper, once the data has been downloaded and processed as described above:
-
+### Option A — Predefined scripts
 ```bash
-bash experiments/Ablation_CICIDS.sh
-bash experiments/Ablation_UNSW-NB15.sh
 bash experiments/CICIDS.sh
 bash experiments/UNSW-NB15.sh
+bash experiments/Ablation_CICIDS.sh
+bash experiments/Ablation_UNSW-NB15.sh
 ```
 
-### Option 2: Custom Run with Arguments
+### Option B — Custom runs
 
-You can run the training script manually with your desired configuration:
-
+**Training + plotting this run**
 ```bash
-python trainContinuousFlow.py \
+python train.py \
   --data_name UNSW-NB15 \
   --continuous_flow_type flow \
   --normalization_type EMANet \
-  --buffer_type agem \
+  --buffer_type der \
   --buffer_size 500000 \
+  --buffer_batch_size 20000 \
   --batch_size 20000 \
-  --n_epochs 20
+  --n_epochs 20 \
+  --run_name DER_eta0p99 \
+  --plot --plot_per_experience \
+  --save_plot_dir ./plots
 ```
 
-## ⚙️ Arguments
+**Compare multiple saved runs (no training)**
+```bash
+python train.py --mode compare \
+  --compare_paths results/2025*_norm-*_buffer-*.pt \
+  --save_plot_dir ./plots \
+  --smooth_window 1
+```
 
-Below is a list of main command-line arguments supported by `trainContinuousFlow.py`:
+### What `train.py` saves
+- `results/<stamp>_norm-<...>_buffer-<...>_eta-<...>_acc_auroc.pt`  
+  Contains per‑experience metrics (Acc, AUROC), per‑epoch curves:
+  - `epoch_avg_acc_seen`: avg accuracy across all **seen** experiences at each epoch (captures forgetting);
+  - `epoch_acc_current`: accuracy on the **current** experience at each epoch.
+- `results/<stamp>_..._per_epoch.csv` — tidy CSV: `experience_idx, epoch_idx, avg_acc_seen, acc_current`.
+- Plots (if `--plot`): aggregate mean curves across experiences and optionally per‑experience figures.
+
+---
+
+## ⚙️ Key Arguments
+
+**`train.py` main flags**
 
 | Argument | Description | Default |
-|----------|-------------|---------|
-| `--data_name` | Dataset to use: `CIC-IDS` or `UNSW-NB15` | `UNSW-NB15` |
-| `--continuous_flow_type` | Type of data stream: `daily` or `flow` | `flow` |
-| `--normalization_type` | Normalization method: `no`, `global`, `local`, `EMANet`, `up_to` | `global` |
-| `--buffer_type` | Replay strategy: `no`, `random`, `agem` | `random` |
-| `--buffer_size` | Total buffer size | `500000` |
-| `--n_layers` | Number of hidden layers in the classifier | `4` |
+|---|---|---|
+| `--mode` | `train` or `compare` | `train` |
+| `--data_name` | Dataset: `CIC-IDS` or `UNSW-NB15` | `UNSW-NB15` |
+| `--continuous_flow_type` | Data stream: `daily` \| `flow` | `flow` |
+| `--normalization_type` | `no`, `global`, `local`, `EMANet` | `global` |
+| `--buffer_type` | CL strategy: `no`, `er`, `reservoir`, `der`, `agem`, `ogd`, `ewc`, `lwf` | `er` |
+| `--buffer_size` | Total memory size (for replay methods) | `500000` |
+| `--buffer_batch_size` | Replay mini‑batch size per step | `20000` |
+| `--n_layers` | Hidden layers in classifier | `4` |
+| `--hidden_dim` | Hidden dimension per layer | `128` |
 | `--dropout_rate` | Dropout probability | `0.5` |
+| `--batch_size` | SGD batch size | `20000` |
+| `--n_epochs` | Epochs per experience | `20` |
 | `--learning_rate` | Learning rate | `5e-4` |
 | `--eta` | EMA decay rate for EMANet | `0.99` |
-| `--chunk_size` | (Flow mode) Size of each experience chunk | `300000` |
-| `--stride` | (Flow mode) Step between chunks | `100000` |
+| `--chunk_size` | (Flow) elements per experience | `500000` |
+| `--stride` | (Flow) stride between experiences | `500000` |
+| `--plot` | Save plots for this run | `False` |
+| `--plot_per_experience` | Save per‑experience plots | `False` |
+| `--save_plot_dir` | Output directory for plots | `./plots` |
+| `--run_name` | Label for titles/files | `""` |
+| `--compare_paths` | (compare) list of result `.pt` files | `None` |
+| `--smooth_window` | Moving‑average window (plots) | `1` |
 
-## 📈 Citation
+---
+
+## 🧠 Implemented CL Strategies (High‑level)
+
+- **No buffer**: plain training per experience.
+- **ER** (Experience Replay): random memory + uniform sampling at each step.
+- **Reservoir ER**: reservoir sampling policy for memory replacement.
+- **DER / DER++**: replay with stored **logits** (KD loss) + optional CE on replay labels.
+- **A‑GEM**: gradient projection using a reference gradient from memory.
+- **OGD**: orthogonal projection of current gradient onto the complement of stored bases (no memory).
+- **EWC**: diagonal Fisher regularization across experiences (no memory).
+- **LwF**: distillation from a frozen teacher (previous model snapshot) on current data (no memory).
+
+> All strategies work with **EMANet** or other normalization choices. Replay batches are normalized through the same normalizer during training.
+
+---
+
+## 📈 Visualization & Comparison
+
+- **Per‑epoch curves** saved for each experience allow you to visualize catastrophic forgetting:
+  - `AvgAcc(seen)`: mean accuracy over **all seen** test sets after each epoch.
+  - `Acc(current)`: accuracy on the **current** test set after each epoch.
+- `train.py --mode compare` plots **mean curves across experiences** for multiple runs in a single figure, enabling quick method comparison.
+
+---
+
+## 🔧 Reproducibility Tips
+
+- Use `--seed <int>` to fix randomness (PyTorch + NumPy seeded).
+- Keep `requirements.txt` pinned. If using GPUs/HPC, record CUDA/cuDNN and driver versions.
+- Save `--run_name` per run to keep plots and CSVs organized.
+
+---
+
+## 📄 Citation
 
 *Citation will be added upon acceptance. Stay tuned!*
+

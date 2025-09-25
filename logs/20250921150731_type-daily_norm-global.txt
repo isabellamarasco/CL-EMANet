@@ -1,0 +1,10 @@
+2025-09-21 15:07:31,816 - INFO - -- Dataset: CIC-IDS
+2025-09-21 15:07:31,816 - INFO - -- Continuous flow type: daily
+2025-09-21 15:07:31,816 - INFO - -- Normalization type: global
+2025-09-21 15:07:31,817 - INFO - -- Buffer type: no
+2025-09-21 15:07:31,817 - INFO - -- eta: 0.99
+2025-09-21 15:07:43,396 - INFO - 
+-------------------------
+2025-09-21 15:07:43,460 - INFO - Timestep = Monday, Classes: [0: 476532, 1: 0]
+2025-09-21 15:07:43,636 - INFO - Major Classifier: 1.0000
+2025-09-21 15:07:43,808 - INFO - Random Classifier: 1.0000

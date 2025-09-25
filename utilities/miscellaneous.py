@@ -63,24 +63,121 @@ def get_CF_data(config):
     return data
 
 
+from materials import models
+
+
 def get_model(config):
-    if config.normalization_type.lower() == "emanet":
-        model = models.EMAFCNet(
+    """
+    Return a model according to config.model_name and normalization_type.
+
+    Supported model_name values:
+      - "fc", "emafc"
+      - "resmlp", "emaresmlp"
+      - "glumlp", "emaglumlp"
+      - "ftt", "emaftt"
+    Falls back to FCNet / EMAFCNet if model_name is not provided.
+    """
+
+    # Default fallback if model_name not provided
+    model_name = getattr(config, "model_name", None)
+    if model_name is None:
+        if config.normalization_type.lower() == "emanet":
+            return models.EMAFCNet(
+                input_dim=config.input_dim,
+                output_dim=1,
+                n_layers=config.n_layers,
+                hidden_dim=config.hidden_dim,
+                dropout_rate=config.dropout_rate,
+                eta=config.eta,
+            )
+        else:
+            return models.FCNet(
+                input_dim=config.input_dim,
+                output_dim=1,
+                n_layers=config.n_layers,
+                hidden_dim=config.hidden_dim,
+                dropout_rate=config.dropout_rate,
+            )
+
+    # Normalize for case-insensitivity
+    name = model_name.lower()
+
+    if name == "fc":
+        return models.FCNet(
             input_dim=config.input_dim,
             output_dim=1,
             n_layers=config.n_layers,
             hidden_dim=config.hidden_dim,
             dropout_rate=config.dropout_rate,
+        )
+    elif name == "emafc":
+        return models.EMAFCNet(
+            input_dim=config.input_dim,
+            output_dim=1,
+            n_layers=config.n_layers,
+            hidden_dim=config.hidden_dim,
+            dropout_rate=config.dropout_rate,
+            eta=config.eta,
+        )
+    elif name == "resmlp":
+        return models.ResFCNet(
+            input_dim=config.input_dim,
+            output_dim=1,
+            n_layers=config.n_layers,
+            hidden_dim=config.hidden_dim,
+            dropout_rate=config.dropout_rate,
+        )
+    elif name == "emaresmlp":
+        return models.EMAResFCNet(
+            input_dim=config.input_dim,
+            output_dim=1,
+            n_layers=config.n_layers,
+            hidden_dim=config.hidden_dim,
+            dropout_rate=config.dropout_rate,
+            eta=config.eta,
+        )
+    elif name == "glumlp":
+        return models.GLUFCNet(
+            input_dim=config.input_dim,
+            output_dim=1,
+            n_layers=config.n_layers,
+            hidden_dim=config.hidden_dim,
+            dropout_rate=config.dropout_rate,
+            use_se=True,
+        )
+    elif name == "emaglumlp":
+        return models.EMAGLUFCNet(
+            input_dim=config.input_dim,
+            output_dim=1,
+            n_layers=config.n_layers,
+            hidden_dim=config.hidden_dim,
+            dropout_rate=config.dropout_rate,
+            eta=config.eta,
+            use_se=True,
+        )
+    elif name == "ftt":
+        return models.FTTransformer(
+            input_dim=config.input_dim,
+            output_dim=1,
+            d_token=getattr(config, "d_token", 192),
+            n_heads=getattr(config, "n_heads", 8),
+            n_layers=getattr(config, "n_layers", 3),
+            ff_mult=getattr(config, "ff_mult", 4),
+            dropout_rate=config.dropout_rate,
+        )
+    elif name == "emaftt":
+        return models.EMAFTTransformer(
+            input_dim=config.input_dim,
+            output_dim=1,
+            d_token=getattr(config, "d_token", 192),
+            n_heads=getattr(config, "n_heads", 8),
+            n_layers=getattr(config, "n_layers", 3),
+            ff_mult=getattr(config, "ff_mult", 4),
+            dropout_rate=config.dropout_rate,
+            eta=config.eta,
         )
     else:
-        model = models.FCNet(
-            input_dim=config.input_dim,
-            output_dim=1,
-            n_layers=config.n_layers,
-            hidden_dim=config.hidden_dim,
-            dropout_rate=config.dropout_rate,
-        )
-    return model
+        raise ValueError(f"Unknown model_name: {model_name}")
 
 
 def get_prediction(y_pred, threshold=0.5):
