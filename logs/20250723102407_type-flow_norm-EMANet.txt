@@ -1,8 +1,0 @@
-2025-07-23 10:24:07,582 - INFO - -- Dataset: UNSW-NB15
-2025-07-23 10:24:07,586 - INFO - -- Continuous flow type: flow
-2025-07-23 10:24:07,586 - INFO - -- Normalization type: EMANet
-2025-07-23 10:24:07,586 - INFO - -- eta: 0.9
-2025-07-23 10:24:07,880 - INFO - -- Using RandomBuffer
-2025-07-23 10:24:09,525 - INFO - 
--------------------------
-2025-07-23 10:24:09,940 - INFO - Timestep = 0, Classes: [0: 429993, 1: 20007]

@@ -1,4 +1,0 @@
-2025-07-23 10:23:56,617 - INFO - -- Dataset: UNSW-NB15
-2025-07-23 10:23:56,617 - INFO - -- Continuous flow type: daily
-2025-07-23 10:23:56,617 - INFO - -- Normalization type: EMANet
-2025-07-23 10:23:56,617 - INFO - -- eta: 0.8
