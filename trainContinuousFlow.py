@@ -330,12 +330,12 @@ def main(cfg):
         if use_cn:
             # Materialize normalized data in two phases to avoid autograd ties and to set stable BN stats
             x_train_norm = normalizer._bn_warmup_and_materialize(
-                x, normalizer, batch_size=65536
+                x_train, normalizer, batch_size=65536
             )
         else:
             # Non-CN normalizers (no/global/local/EMANet) can be applied directly once without graphs
             with torch.no_grad():
-                x_train_norm = normalizer(x).float()
+                x_train_norm = normalizer(x_train).float()
 
         # Send to device / convert dtypes
         x_train_norm = x_train_norm.float().to(cfg.device)
