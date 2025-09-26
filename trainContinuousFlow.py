@@ -2,12 +2,10 @@ import argparse
 import logging
 import os
 from datetime import datetime
-from typing import List, Dict, Any
 
 import torch
 from torch import nn
 import numpy as np
-import matplotlib.pyplot as plt
 import csv
 
 from materials import buffer
@@ -23,16 +21,7 @@ def parse_args():
         description="Run continual learning model or compare results."
     )
 
-    # Mode
-    parser.add_argument(
-        "--mode",
-        type=str,
-        choices=["train", "compare"],
-        default="train",
-        help="Run training pipeline (train) or only compare saved results (compare).",
-    )
-
-    # Dataset and experiment setup (used in train mode)
+    # Dataset and experiment setup
     parser.add_argument(
         "--data_name",
         type=str,
@@ -50,7 +39,7 @@ def parse_args():
     parser.add_argument(
         "--normalization_type",
         type=str,
-        choices=["no", "global", "local", "EMANet"],
+        choices=["no", "global", "local", "EMANet", "CN"],
         default="global",
         help="Type of normalization algorithm to use",
     )
@@ -132,7 +121,15 @@ def parse_args():
         "--eta",
         type=float,
         default=0.99,
-        help="Value of the momentum of EMA module when EMANet is chosen as normalization type",
+        help="Momentum of EMA module when EMANet is chosen as normalization type",
+    )
+
+    # CN-specific
+    parser.add_argument(
+        "--cn_momentum",
+        type=float,
+        default=0.1,
+        help="BatchNorm momentum for CN-like input normalization.",
     )
 
     # Optional flow-related
@@ -154,212 +151,27 @@ def parse_args():
         "--seed", type=str, default="None", help="Random seed (default: None)"
     )
 
-    # Plotting & output
-    parser.add_argument(
-        "--plot",
-        action="store_true",
-        help="If set (in train mode), produce plots for this run (aggregate and optionally per-experience).",
-    )
-    parser.add_argument(
-        "--plot_per_experience",
-        action="store_true",
-        help="If set (in train mode with --plot), also save per-experience epoch curves.",
-    )
+    # (Restored so your script doesn’t crash where they are referenced)
     parser.add_argument(
         "--save_plot_dir",
         type=str,
         default="./plots",
-        help="Directory to save generated plots.",
+        help="Directory to save generated plots/figures (if any).",
     )
     parser.add_argument(
         "--run_name",
         type=str,
         default="",
-        help="Optional run label to embed in CSV/plot titles.",
-    )
-
-    # Compare mode inputs
-    parser.add_argument(
-        "--compare_paths",
-        nargs="+",
-        default=None,
-        help="List of .pt result files to compare (used in --mode compare).",
-    )
-    parser.add_argument(
-        "--smooth_window",
-        type=int,
-        default=1,
-        help="Moving-average window for smoothing curves in comparison/plots (1 means no smoothing).",
+        help="Optional run label stored in the .pt bundle.",
     )
 
     return parser.parse_args()
 
 
 ########################################
-############# PLOTTING UTILS ###########
-########################################
-def _moving_average(arr: np.ndarray, win: int) -> np.ndarray:
-    if win <= 1:
-        return arr
-    if win > len(arr):
-        win = len(arr)
-    cumsum = np.cumsum(np.insert(arr, 0, 0.0))
-    return (cumsum[win:] - cumsum[:-win]) / float(win)
-
-
-def _pad_to_same_length(curves: List[np.ndarray]) -> List[np.ndarray]:
-    L = min(len(c) for c in curves)
-    return [c[:L] for c in curves]
-
-
-def plot_aggregate_curves(
-    epoch_curves: List[List[float]],
-    title: str,
-    ylabel: str,
-    outfile: str,
-    smooth: int = 1,
-):
-    """
-    epoch_curves: list over experiences; each is a list over epochs.
-    We compute the mean curve across experiences and plot (optionally smoothed).
-    """
-    if len(epoch_curves) == 0 or len(epoch_curves[0]) == 0:
-        return
-    curves = [np.array(c, dtype=np.float32) for c in epoch_curves]
-    curves = _pad_to_same_length(curves)
-    mat = np.stack(curves, axis=0)  # [E, T]
-    mean_curve = mat.mean(axis=0)
-    if smooth > 1:
-        mean_curve = _moving_average(mean_curve, smooth)
-        x = np.arange(len(mean_curve))
-    else:
-        x = np.arange(len(mean_curve))
-
-    plt.figure()
-    plt.plot(x, mean_curve)
-    plt.title(title)
-    plt.xlabel("Epoch")
-    plt.ylabel(ylabel)
-    plt.grid(True)
-    os.makedirs(os.path.dirname(outfile), exist_ok=True)
-    plt.savefig(outfile, bbox_inches="tight")
-    plt.close()
-
-
-def plot_per_experience_curves(
-    epoch_curves: List[List[float]],
-    title_prefix: str,
-    ylabel: str,
-    outdir: str,
-    smooth: int = 1,
-):
-    os.makedirs(outdir, exist_ok=True)
-    for i, curve in enumerate(epoch_curves):
-        c = np.array(curve, dtype=np.float32)
-        if smooth > 1:
-            c = _moving_average(c, smooth)
-            x = np.arange(len(c))
-        else:
-            x = np.arange(len(c))
-        plt.figure()
-        plt.plot(x, c)
-        plt.title(f"{title_prefix} (timestep #{i})")
-        plt.xlabel("Epoch")
-        plt.ylabel(ylabel)
-        plt.grid(True)
-        plt.savefig(
-            os.path.join(outdir, f"{title_prefix.replace(' ', '_').lower()}_t{i}.png"),
-            bbox_inches="tight",
-        )
-        plt.close()
-
-
-def plot_comparison(files: List[str], outdir: str, smooth: int = 1):
-    """
-    Load multiple .pt result files and compare:
-    - aggregate mean over experiences of epoch_avg_acc_seen
-    - aggregate mean over experiences of epoch_acc_current
-    """
-    os.makedirs(outdir, exist_ok=True)
-
-    legends = []
-    seen_curves = []
-    current_curves = []
-
-    for f in files:
-        try:
-            d = torch.load(f, map_location="cpu")
-        except Exception as e:
-            print(f"[WARN] Failed to load {f}: {e}")
-            continue
-
-        label = os.path.basename(f)
-        # Try to parse buffer type from file name (if present)
-        if "buffer-" in label:
-            try:
-                part = label.split("buffer-")[1]
-                label = part.split("_")[0]
-            except Exception:
-                pass
-
-        # Build aggregate (mean across experiences)
-        es: List[List[float]] = d.get("epoch_avg_acc_seen", [])
-        ec: List[List[float]] = d.get("epoch_acc_current", [])
-
-        if len(es) == 0 or len(ec) == 0:
-            print(f"[WARN] No per-epoch curves in {f}, skipping.")
-            continue
-
-        es_np = [np.array(e, dtype=np.float32) for e in es if len(e) > 0]
-        ec_np = [np.array(e, dtype=np.float32) for e in ec if len(e) > 0]
-        if len(es_np) == 0 or len(ec_np) == 0:
-            continue
-
-        es_np = _pad_to_same_length(es_np)
-        ec_np = _pad_to_same_length(ec_np)
-        mean_seen = np.stack(es_np, axis=0).mean(axis=0)
-        mean_current = np.stack(ec_np, axis=0).mean(axis=0)
-
-        if smooth > 1:
-            mean_seen = _moving_average(mean_seen, smooth)
-            mean_current = _moving_average(mean_current, smooth)
-
-        seen_curves.append(mean_seen)
-        current_curves.append(mean_current)
-        legends.append(label)
-
-    # Plot comparison
-    if len(seen_curves) > 0:
-        L = min(len(c) for c in seen_curves)
-        plt.figure()
-        for curve, lab in zip(seen_curves, legends):
-            plt.plot(np.arange(L), curve[:L], label=lab)
-        plt.title("Comparison — AvgAcc over Seen Tasks (mean across experiences)")
-        plt.xlabel("Epoch")
-        plt.ylabel("AvgAcc(seen)")
-        plt.grid(True)
-        plt.legend()
-        plt.savefig(os.path.join(outdir, "compare_seen.png"), bbox_inches="tight")
-        plt.close()
-
-    if len(current_curves) > 0:
-        L = min(len(c) for c in current_curves)
-        plt.figure()
-        for curve, lab in zip(current_curves, legends):
-            plt.plot(np.arange(L), curve[:L], label=lab)
-        plt.title("Comparison — Acc on Current Task (mean across experiences)")
-        plt.xlabel("Epoch")
-        plt.ylabel("Acc(current)")
-        plt.grid(True)
-        plt.legend()
-        plt.savefig(os.path.join(outdir, "compare_current.png"), bbox_inches="tight")
-        plt.close()
-
-
-########################################
 ############### TRAIN ##################
 ########################################
-def main_train(cfg):
+def main(cfg):
     cfg.device = miscellaneous.get_device()
 
     # Optional seeding
@@ -437,7 +249,13 @@ def main_train(cfg):
     if normalizer is None:
         from materials import normalizers as _norms
 
-        normalizer = _norms.SimpleNormalization(cfg.normalization_type)
+        if cfg.normalization_type == "CN":
+            # Use CN-like input normalization
+            normalizer = _norms.ContinualNormInput(
+                cfg.input_dim, momentum=cfg.cn_momentum
+            )
+        else:
+            normalizer = _norms.SimpleNormalization(cfg.normalization_type)
 
     model = miscellaneous.get_model(cfg).to(cfg.device)
 
@@ -480,7 +298,6 @@ def main_train(cfg):
     ########################################
     ############# TRAINING #################
     ########################################
-    minmax_list = []
     test_sets = []
     experience_accuracies = []
     experience_aurocs = []
@@ -502,9 +319,9 @@ def main_train(cfg):
         # Compute and update normalizer min/max on current train
         Mx, mx = normalizer.get_minmax(x_train)
         normalizer.update(Mx, mx)
-        minmax_list.append(torch.stack((Mx[0], mx[0]), dim=1))
 
         # Normalize current train split
+        x_train = x_train.float()
         x_train_norm = normalizer(x_train)
 
         # Send to device / convert dtypes
@@ -555,6 +372,8 @@ def main_train(cfg):
 
         # Train epochs
         model.train()
+        # Make sure CN's BN updates during training evaluations in the loop (normalizer follows model mode if you toggle it)
+        normalizer.train(True)
         trainer.train(
             train_loader,
             optimizer,
@@ -566,9 +385,14 @@ def main_train(cfg):
         # Add current train to buffer
         if B is not None:
             if bt == "der":
+                # Avoid updating CN running stats while extracting logits (eval mode)
+                was_training = normalizer.training
+                normalizer.eval()
                 with torch.no_grad():
                     x_train_norm_full = normalizer(x_train).float().to(cfg.device)
                     logits = model(x_train_norm_full).detach().cpu()
+                if was_training:
+                    normalizer.train(True)
                 B.update(x_train.cpu(), y_train.cpu(), logits)
             else:
                 B.update(x_train, y_train)
@@ -576,12 +400,25 @@ def main_train(cfg):
         ########################################
         ############# TESTING ##################
         ########################################
+        # Use eval mode for model and CN during evaluation
+        was_training_m = model.training
+        was_training_n = normalizer.training
+        model.eval()
+        normalizer.eval()
+
         metrics_t, avg_acc = miscellaneous.test_on_previous_experiences(
             model,
             normalizer,
             test_sets,
             timesteps,
         )
+
+        # restore modes
+        if was_training_m:
+            model.train(True)
+        if was_training_n:
+            normalizer.train(True)
+
         logging.info(f"Avg Accuracy: {avg_acc:0.4f}")
         logging.info(f"Accuracy: {metrics_t['Acc']}")
         logging.info(f"FPR: {metrics_t['FPR']}")
@@ -640,63 +477,7 @@ def main_train(cfg):
                 writer.writerow([exp_idx, e, seen_curve[e], cur_curve[e]])
     logging.info(f"Saved per-epoch curves to {csv_path}")
 
-    ########################################
-    ############### PLOTTING ###############
-    ########################################
-    if cfg.plot:
-        tag = cfg.run_name if cfg.run_name else os.path.basename(pt_path)
-        # Aggregate plots (mean across experiences)
-        plot_aggregate_curves(
-            all_epoch_avg_acc_seen,
-            title=f"{tag} — AvgAcc over Seen (mean across experiences)",
-            ylabel="AvgAcc(seen)",
-            outfile=os.path.join(cfg.save_plot_dir, "aggregate_seen.png"),
-            smooth=cfg.smooth_window,
-        )
-        plot_aggregate_curves(
-            all_epoch_acc_current,
-            title=f"{tag} — Acc on Current (mean across experiences)",
-            ylabel="Acc(current)",
-            outfile=os.path.join(cfg.save_plot_dir, "aggregate_current.png"),
-            smooth=cfg.smooth_window,
-        )
-
-        # Per-experience (optional)
-        if cfg.plot_per_experience:
-            per_dir = os.path.join(cfg.save_plot_dir, "per_experience")
-            plot_per_experience_curves(
-                all_epoch_avg_acc_seen,
-                title_prefix="AvgAcc over Seen",
-                ylabel="AvgAcc(seen)",
-                outdir=per_dir,
-                smooth=cfg.smooth_window,
-            )
-            plot_per_experience_curves(
-                all_epoch_acc_current,
-                title_prefix="Acc on Current",
-                ylabel="Acc(current)",
-                outdir=per_dir,
-                smooth=cfg.smooth_window,
-            )
-
-
-########################################
-############## COMPARE #################
-########################################
-def main_compare(cfg):
-    if not cfg.compare_paths:
-        print("[ERROR] --mode compare requires --compare_paths file1.pt file2.pt ...")
-        return
-    os.makedirs(cfg.save_plot_dir, exist_ok=True)
-    plot_comparison(cfg.compare_paths, cfg.save_plot_dir, smooth=cfg.smooth_window)
-    print(f"[OK] Saved comparison plots to {cfg.save_plot_dir}")
-
 
 if __name__ == "__main__":
     cfg = parse_args()
-    if not hasattr(cfg, "save_plot_dir"):
-        cfg.save_plot_dir = "./plots"
-    if cfg.mode == "train":
-        main_train(cfg)
-    else:
-        main_compare(cfg)
+    main(cfg)

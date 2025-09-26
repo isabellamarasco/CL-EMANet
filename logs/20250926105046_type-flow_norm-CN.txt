@@ -1,0 +1,12 @@
+2025-09-26 10:50:46,302 - INFO - -- Dataset: UNSW-NB15
+2025-09-26 10:50:46,302 - INFO - -- Continuous flow type: flow
+2025-09-26 10:50:46,302 - INFO - -- Normalization type: CN
+2025-09-26 10:50:46,302 - INFO - -- Buffer type: lwf
+2025-09-26 10:50:46,302 - INFO - -- eta: 0.99
+2025-09-26 10:50:46,302 - INFO - -- Run name: ema_lwf_resmlp
+2025-09-26 10:50:46,324 - INFO - -- Not using memory buffer
+2025-09-26 10:50:47,791 - INFO - 
+-------------------------
+2025-09-26 10:50:47,859 - INFO - Timestep = 0, Classes: [0: 430015, 1: 19985]
+2025-09-26 10:50:48,632 - INFO - Major Classifier: 0.9556
+2025-09-26 10:50:49,355 - INFO - Random Classifier: 0.9151

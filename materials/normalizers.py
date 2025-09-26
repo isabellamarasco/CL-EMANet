@@ -92,6 +92,55 @@ class SimpleNormalization:
             self.mx = torch.minimum(self.mx, mx)
 
 
+# --- Continual Normalization for tabular inputs (CN-like) --------------------
+class ContinualNormInput(nn.Module):
+    """
+    CN-like input normalization for tabular data:
+      x  ->  LayerNorm(no affine, per-sample across features)
+         ->  BatchNorm1d(with affine, running stats across stream)
+
+    - LayerNorm(no affine) acts like the "spatial/within-sample" pre-normalization.
+    - BatchNorm1d leverages batch statistics while tracking running stats.
+    - Matches the SimpleNormalization interface used in your train loop.
+
+    Notes:
+    - Expects inputs of shape [N, D].
+    - get_minmax/update are no-ops, returned values are dummies to keep existing code unchanged.
+    """
+
+    def __init__(self, input_dim: int, momentum: float = 0.1, eps: float = 1e-5):
+        super().__init__()
+        self.input_dim = input_dim
+        # within-sample normalization (no affine to avoid re-scaling/shift that fight BN)
+        self.ln = nn.LayerNorm(input_dim, elementwise_affine=False, eps=eps)
+        # batch-level normalization with running stats (affine enabled)
+        self.bn = nn.BatchNorm1d(
+            input_dim, eps=eps, momentum=momentum, affine=True, track_running_stats=True
+        )
+
+        # Dummy tensors to satisfy train.py bookkeeping (minmax_list etc.)
+        self._dummy_M = torch.zeros(1, input_dim)
+        self._dummy_m = torch.zeros(1, input_dim)
+
+    # API compatibility with SimpleNormalization
+    def get_minmax(self, x: torch.Tensor):
+        return self._dummy_M.to(x.device), self._dummy_m.to(x.device)
+
+    def update(self, Mx: torch.Tensor = None, mx: torch.Tensor = None):
+        # CN does not need min/max updates.
+        return
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # x: [N, D]
+        x = self.ln(x)
+        # BatchNorm1d expects [N, C] or [N, C, L]. Here we have [N, D] which is fine.
+        x = self.bn(x)
+        return x
+
+    # So you can call normalizer(x) as in your current code
+    __call__ = forward
+
+
 class EMANet(nn.Module):
     def __init__(
         self,
