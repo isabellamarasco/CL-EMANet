@@ -130,6 +130,42 @@ class ContinualNormInput(nn.Module):
         # CN does not need min/max updates.
         return
 
+    # ---- CN-aware normalization materialization (keeps normalization in train.py) ----
+    def _bn_warmup_and_materialize(
+        self, x_cpu: torch.Tensor, normalizer_module, batch_size: int = 65536
+    ) -> torch.Tensor:
+        """
+        1) Run a no-grad 'warmup' over raw x to update BN running stats in CN (normalizer.train()).
+        2) Switch normalizer.eval(); materialize normalized x with no_grad to detach from autograd graph.
+        Returns a float32 CPU tensor with the same shape as input.
+        """
+        # Skip if there is no BN inside (non-CN normalizers stay as before)
+        has_bn = hasattr(normalizer_module, "bn")
+
+        # 1) BN running stats warm-up (train mode), no graph built
+        if has_bn:
+            normalizer_module.train(True)
+            with torch.no_grad():
+                # iterate in big mini-batches to approximate streaming stats
+                Ntot = x_cpu.size(0)
+                bs = min(batch_size, max(1, Ntot))
+                for s in range(0, Ntot, bs):
+                    e = min(Ntot, s + bs)
+                    _ = normalizer_module(
+                        x_cpu[s:e].float()
+                    )  # just update running stats
+
+        # 2) Freeze CN and materialize normalized tensor (eval mode, no grad)
+        normalizer_module.eval()
+        with torch.no_grad():
+            out = torch.empty_like(x_cpu, dtype=torch.float32)
+            Ntot = x_cpu.size(0)
+            bs = min(batch_size, max(1, Ntot))
+            for s in range(0, Ntot, bs):
+                e = min(Ntot, s + bs)
+                out[s:e] = normalizer_module(x_cpu[s:e].float())
+        return out
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: [N, D]
         x = self.ln(x)

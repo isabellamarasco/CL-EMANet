@@ -322,7 +322,20 @@ def main(cfg):
 
         # Normalize current train split
         x_train = x_train.float()
-        x_train_norm = normalizer(x_train)
+
+        # Decide path based on whether we're using CN
+        use_cn = (
+            getattr(normalizer, "bn", None) is not None
+        )  # crude but reliable for our ContinualNormInput
+        if use_cn:
+            # Materialize normalized data in two phases to avoid autograd ties and to set stable BN stats
+            x_train_norm = normalizer._bn_warmup_and_materialize(
+                x, normalizer, batch_size=65536
+            )
+        else:
+            # Non-CN normalizers (no/global/local/EMANet) can be applied directly once without graphs
+            with torch.no_grad():
+                x_train_norm = normalizer(x).float()
 
         # Send to device / convert dtypes
         x_train_norm = x_train_norm.float().to(cfg.device)
