@@ -92,88 +92,56 @@ class SimpleNormalization:
             self.mx = torch.minimum(self.mx, mx)
 
 
-# --- Continual Normalization for tabular inputs (CN-like) --------------------
 class ContinualNormInput(nn.Module):
     """
     CN-like input normalization for tabular data:
-      x  ->  LayerNorm(no affine, per-sample across features)
-         ->  BatchNorm1d(with affine, running stats across stream)
+      x -> LayerNorm(no affine, per sample across features)
+        -> BatchNorm1d(with affine, running stats)
 
-    - LayerNorm(no affine) acts like the "spatial/within-sample" pre-normalization.
-    - BatchNorm1d leverages batch statistics while tracking running stats.
-    - Matches the SimpleNormalization interface used in your train loop.
-
-    Notes:
-    - Expects inputs of shape [N, D].
-    - get_minmax/update are no-ops, returned values are dummies to keep existing code unchanged.
+    Robust to dtype/device mismatches. Works in both train/eval modes.
     """
 
     def __init__(self, input_dim: int, momentum: float = 0.1, eps: float = 1e-5):
         super().__init__()
         self.input_dim = input_dim
-        # within-sample normalization (no affine to avoid re-scaling/shift that fight BN)
         self.ln = nn.LayerNorm(input_dim, elementwise_affine=False, eps=eps)
-        # batch-level normalization with running stats (affine enabled)
         self.bn = nn.BatchNorm1d(
             input_dim, eps=eps, momentum=momentum, affine=True, track_running_stats=True
         )
+        # dummies for API compatibility with your pipeline
+        self.register_buffer("_dummy_M", torch.zeros(1, input_dim), persistent=False)
+        self.register_buffer("_dummy_m", torch.zeros(1, input_dim), persistent=False)
 
-        # Dummy tensors to satisfy train.py bookkeeping (minmax_list etc.)
-        self._dummy_M = torch.zeros(1, input_dim)
-        self._dummy_m = torch.zeros(1, input_dim)
-
-    # API compatibility with SimpleNormalization
+    # keep train.py happy
     def get_minmax(self, x: torch.Tensor):
-        return self._dummy_M.to(x.device), self._dummy_m.to(x.device)
+        # return same device/dtype as caller to avoid later stacking issues
+        return (
+            self._dummy_M.to(device=x.device, dtype=x.dtype),
+            self._dummy_m.to(device=x.device, dtype=x.dtype),
+        )
 
     def update(self, Mx: torch.Tensor = None, mx: torch.Tensor = None):
-        # CN does not need min/max updates.
         return
 
-    # ---- CN-aware normalization materialization (keeps normalization in train.py) ----
-    def _bn_warmup_and_materialize(
-        self, x_cpu: torch.Tensor, normalizer_module, batch_size: int = 65536
-    ) -> torch.Tensor:
-        """
-        1) Run a no-grad 'warmup' over raw x to update BN running stats in CN (normalizer.train()).
-        2) Switch normalizer.eval(); materialize normalized x with no_grad to detach from autograd graph.
-        Returns a float32 CPU tensor with the same shape as input.
-        """
-        # Skip if there is no BN inside (non-CN normalizers stay as before)
-        has_bn = hasattr(normalizer_module, "bn")
-
-        # 1) BN running stats warm-up (train mode), no graph built
-        if has_bn:
-            normalizer_module.train(True)
-            with torch.no_grad():
-                # iterate in big mini-batches to approximate streaming stats
-                Ntot = x_cpu.size(0)
-                bs = min(batch_size, max(1, Ntot))
-                for s in range(0, Ntot, bs):
-                    e = min(Ntot, s + bs)
-                    _ = normalizer_module(
-                        x_cpu[s:e].float()
-                    )  # just update running stats
-
-        # 2) Freeze CN and materialize normalized tensor (eval mode, no grad)
-        normalizer_module.eval()
-        with torch.no_grad():
-            out = torch.empty_like(x_cpu, dtype=torch.float32)
-            Ntot = x_cpu.size(0)
-            bs = min(batch_size, max(1, Ntot))
-            for s in range(0, Ntot, bs):
-                e = min(Ntot, s + bs)
-                out[s:e] = normalizer_module(x_cpu[s:e].float())
-        return out
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # x: [N, D]
+        # Ensure 2D [N, D]
+        if x.dim() == 1:
+            x = x.unsqueeze(0)
+
+        # Decide BN dtype/device from running stats (always present)
+        bn_device = self.bn.running_mean.device
+        bn_dtype = self.bn.running_mean.dtype
+
+        # Do LayerNorm in the target dtype/device to keep things consistent
+        x = x.to(device=bn_device, dtype=bn_dtype)
         x = self.ln(x)
-        # BatchNorm1d expects [N, C] or [N, C, L]. Here we have [N, D] which is fine.
+
+        # BatchNorm1d requires input + (running_mean/var + weight/bias) all same dtype/device
+        # running_mean/var are already (bn_device, bn_dtype); cast input explicitly:
+        x = x.to(device=bn_device, dtype=bn_dtype)
         x = self.bn(x)
         return x
 
-    # So you can call normalizer(x) as in your current code
     __call__ = forward
 
 
