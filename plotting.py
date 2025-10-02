@@ -1,9 +1,59 @@
 import os
 import argparse
-from typing import List, Tuple, Dict
+from typing import List, Tuple
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+
+
+########################################
+############# LABEL MAP ################
+########################################
+RUN_LABEL_MAP = {
+    "no_no_resmlp": "No Normalization",
+    "global_no_resmlp": "Global",
+    "local_no_resmlp": "Local",
+    "CN_no_resmlp": "CN",
+    "ema_no_resmlp": "EMANet",
+    "no_er_resmlp": "No Normalization",
+    "global_er_resmlp": "Global",
+    "local_er_resmlp": "Local",
+    "CN_er_resmlp": "CN",
+    "ema_er_resmlp": "EMANet",
+    "no_reservoir_resmlp": "No Normalization",
+    "global_reservoir_resmlp": "Global",
+    "local_reservoir_resmlp": "Local",
+    "CN_reservoir_resmlp": "CN",
+    "ema_reservoir_resmlp": "EMANet",
+    "no_agem_resmlp": "No Normalization",
+    "global_agem_resmlp": "Global",
+    "local_agem_resmlp": "Local",
+    "CN_agem_resmlp": "CN",
+    "ema_agem_resmlp": "EMANet",
+    "no_ogd_resmlp": "No Normalization",
+    "global_ogd_resmlp": "Global",
+    "local_ogd_resmlp": "Local",
+    "CN_ogd_resmlp": "CN",
+    "ema_ogd_resmlp": "EMANet",
+    "no_der_resmlp": "No Normalization",
+    "global_der_resmlp": "Global",
+    "local_der_resmlp": "Local",
+    "CN_der_resmlp": "CN",
+    "ema_der_resmlp": "EMANet",
+    "no_ewc_resmlp": "No Normalization",
+    "global_ewc_resmlp": "Global",
+    "local_ewc_resmlp": "Local",
+    "CN_ewc_resmlp": "CN",
+    "ema_ewc_resmlp": "EMANet",
+    "no_lwf_resmlp": "No Normalization",
+    "global_lwf_resmlp": "Global",
+    "local_lwf_resmlp": "Local",
+    "CN_lwf_resmlp": "CN",
+    "ema_lwf_resmlp": "EMANet",
+}
+
+# Fixed legend/curve order
+ORDER = ["No Normalization", "Global", "Local", "CN", "EMANet"]
 
 
 ########################################
@@ -73,8 +123,7 @@ def _moving_average_same(arr: np.ndarray, win: int) -> np.ndarray:
     padded = np.concatenate([pad_left, arr, pad_right])
     kernel = np.ones(win) / float(win)
     smoothed = np.convolve(padded, kernel, mode="valid")
-    # valid length = len(arr) + pad_left + pad_right - win + 1 = len(arr)
-    return smoothed
+    return smoothed  # length preserved
 
 
 def _common_experience_lengths(
@@ -163,9 +212,9 @@ def _plot_compare_sequential(
                 fontsize=9,
                 color=label_color,
             )
-        plt.ylim(0.59, 1.01)  # (bottom=min(0.0, ymin))
+        plt.ylim(0.59, 1.01)  # fixed vis range as per your previous choice
 
-    # plt.title(title)
+    # plt.title(title)  # optional
     plt.xlabel("Global epoch (concatenated across experiences)")
     plt.ylabel(ylabel)
     plt.grid(True, alpha=0.25)
@@ -208,10 +257,9 @@ def main(cfg):
     os.makedirs(cfg.save_plot_dir, exist_ok=True)
 
     # Load runs
-    seen_runs_raw: List[List[List[float]]] = []
-    curr_runs_raw: List[List[List[float]]] = []
-    labels: List[str] = []
-
+    loaded: List[Tuple[str, List[List[float]], List[List[float]]]] = (
+        []
+    )  # (label, es, ec)
     for f in paths:
         try:
             d = torch.load(f, map_location="cpu", weights_only=False)
@@ -219,14 +267,8 @@ def main(cfg):
             print(f"[WARN] Failed to load {f}: {e}")
             continue
 
-        label = d.get("run_name", None) or os.path.basename(f)
-        # Try to extract buffer type for readability
-        if "buffer-" in label:
-            try:
-                part = label.split("buffer-")[1]
-                label = part.split("_")[0]
-            except Exception:
-                pass
+        run_name = d.get("run_name", None) or os.path.basename(f)
+        label = RUN_LABEL_MAP.get(run_name, run_name)  # pretty label mapping
 
         es = d.get("epoch_avg_acc_seen", [])
         ec = d.get("epoch_acc_current", [])
@@ -234,13 +276,22 @@ def main(cfg):
             print(f"[WARN] No per-epoch curves in {f}, skipping.")
             continue
 
-        seen_runs_raw.append(es)
-        curr_runs_raw.append(ec)
-        labels.append(label)
+        loaded.append((label, es, ec))
 
-    if not labels:
+    if not loaded:
         print("[ERROR] No valid results to plot.")
         return
+
+    # Reorder runs by fixed ORDER
+    def order_key(item):
+        lbl = item[0]
+        return ORDER.index(lbl) if lbl in ORDER else len(ORDER)
+
+    loaded.sort(key=order_key)
+
+    labels = [lbl for (lbl, _, _) in loaded]
+    seen_runs_raw = [es for (_, es, _) in loaded]
+    curr_runs_raw = [ec for (_, _, ec) in loaded]
 
     # Compute common experience lengths (truncate per experience so curves align)
     E_seen, Lk_seen = (
@@ -265,7 +316,7 @@ def main(cfg):
             seq, boundaries = _build_seq_with_boundaries(es, Lk_seen)
             seen_seq_runs.append((lbl, seq))
             if not seen_boundaries:
-                seen_boundaries = boundaries  # use boundaries from the first built (same for all due to Lk)
+                seen_boundaries = boundaries  # same for all due to Lk
     if E_curr > 0:
         for lbl, ec in zip(labels, curr_runs_raw):
             seq, boundaries = _build_seq_with_boundaries(ec, Lk_curr)

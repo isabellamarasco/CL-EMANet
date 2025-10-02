@@ -221,8 +221,8 @@ class Trainer:
                         if self.normalizer is not None:
                             x_b = self.normalizer(x_b)
                         if x_b.shape[0] > 0:
-                            x = torch.cat((x, x_b), dim=0)
-                            y = torch.cat((y, y_b), dim=0)
+                            x = torch.cat((x, x_b.to(x.device)), dim=0)
+                            y = torch.cat((y, y_b.to(y.device)), dim=0)
 
                     y_pred = self.model(x)
                     optimizer.zero_grad(set_to_none=True)
@@ -266,7 +266,7 @@ class Trainer:
 
                     if x_b.shape[0] > 0:
                         # KD loss on memory logits (DER)
-                        y_b_pred = self.model(x_b)
+                        y_b_pred = self.model(x_b.to(device))
                         kd = nn.functional.mse_loss(y_b_pred, z_b)
                         loss = loss + self.DER_KD_WEIGHT * kd
 

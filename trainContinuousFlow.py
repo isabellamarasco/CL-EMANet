@@ -305,6 +305,8 @@ def main(cfg):
     # Per-epoch (for forgetting plots)
     all_epoch_avg_acc_seen = []  # list of lists, length N, each list has n_epochs items
     all_epoch_acc_current = []  # list of lists, length N, each list has n_epochs items
+    all_epoch_avg_auroc_seen = []  # NEW: list of lists
+    all_epoch_auroc_current = []  # NEW: list of lists
 
     for i in range(N):
         # Get data at time t
@@ -326,14 +328,13 @@ def main(cfg):
         # Decide path based on whether we're using CN
         use_cn = (
             getattr(normalizer, "bn", None) is not None
-        )  # crude but reliable for our ContinualNormInput
+        )  # ContinualNormInput has .bn
         if use_cn:
-            # Materialize normalized data in two phases to avoid autograd ties and to set stable BN stats
-            x_train_norm = normalizer._bn_warmup_and_materialize(
+            # NOTE: this assumes you implemented _bn_warmup_and_materialize(normalizer-side) as per your previous step.
+            x_train_norm = normalizer._bn_warmup_and_materialize(  # type: ignore[attr-defined]
                 x_train, normalizer, batch_size=65536
             )
         else:
-            # Non-CN normalizers (no/global/local/EMANet) can be applied directly once without graphs
             with torch.no_grad():
                 x_train_norm = normalizer(x_train).float()
 
@@ -360,8 +361,10 @@ def main(cfg):
         print()
 
         # Prepare per-epoch trackers for this experience
-        epoch_avg_acc_seen = []  # average accuracy across all test sets seen so far
-        epoch_acc_current = []  # accuracy on current experience only
+        epoch_avg_acc_seen = []  # accuracy across all seen test sets
+        epoch_acc_current = []  # accuracy on current test set
+        epoch_avg_auroc_seen = []  # NEW: AUROC across all seen test sets
+        epoch_auroc_current = []  # NEW: AUROC on current test set
 
         # Define end-of-epoch evaluation callback
         def _on_epoch_end(epoch_idx: int):
@@ -371,21 +374,40 @@ def main(cfg):
                 test_sets,
                 timesteps,
             )
-            # avg over seen so far:
+            # Accuracy: avg over seen so far
             epoch_avg_acc_seen.append(avg_acc)
 
-            # current experience accuracy only
-            cur_ts = timesteps[len(test_sets) - 1]  # current timestep
+            # Accuracy: current experience only
+            cur_ts = timesteps[len(test_sets) - 1]
             acc_current = metrics_t["Acc"][cur_ts]
             epoch_acc_current.append(acc_current)
 
+            # ---- AUROC (NEW) ----
+            # average AUROC over seen test sets (ignore NaNs if any)
+            seen_ts = timesteps[: len(test_sets)]
+            seen_aurocs = [
+                metrics_t["AUROC"][t]
+                for t in seen_ts
+                if not np.isnan(metrics_t["AUROC"][t])
+            ]
+            avg_auroc_seen = (
+                float(np.mean(seen_aurocs)) if len(seen_aurocs) > 0 else float("nan")
+            )
+            epoch_avg_auroc_seen.append(avg_auroc_seen)
+
+            # AUROC on current experience only
+            auroc_current = metrics_t["AUROC"][cur_ts]
+            epoch_auroc_current.append(auroc_current)
+
             logging.info(
-                f"[Eval e{epoch_idx+1}] AvgAcc(seen): {avg_acc:0.4f} | Acc(current {cur_ts}): {acc_current:0.4f}"
+                f"[Eval e{epoch_idx+1}] "
+                f"AvgAcc(seen): {avg_acc:0.4f} | Acc(current {cur_ts}): {acc_current:0.4f} | "
+                f"AvgAUROC(seen): {avg_auroc_seen:0.4f} | AUROC(current {cur_ts}): {auroc_current:0.4f}"
             )
 
         # Train epochs
         model.train()
-        # Make sure CN's BN updates during training evaluations in the loop (normalizer follows model mode if you toggle it)
+        # CN's BN should be in train mode while training
         normalizer.train(True)
         trainer.train(
             train_loader,
@@ -454,21 +476,23 @@ def main(cfg):
         # Store per-epoch curves for this experience
         all_epoch_avg_acc_seen.append(epoch_avg_acc_seen)
         all_epoch_acc_current.append(epoch_acc_current)
+        all_epoch_avg_auroc_seen.append(epoch_avg_auroc_seen)  # NEW
+        all_epoch_auroc_current.append(epoch_auroc_current)  # NEW
 
     ########################################
     ############## SAVING ##################
     ########################################
-    stamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    save_base = f"./results/{stamp}_norm-{cfg.normalization_type}_buffer-{cfg.buffer_type}_eta-{cfg.eta}"
+    save_base = f"./results/norm-{cfg.normalization_type}_buffer-{cfg.buffer_type}_eta-{cfg.eta}"
     pt_path = f"{save_base}_acc_auroc.pt"
     torch.save(
         {
             "accuracies_per_experience": experience_accuracies,
             "aurocs_per_experience": experience_aurocs,
             "timesteps": timesteps,
-            # Per-epoch curves (for forgetting plots)
             "epoch_avg_acc_seen": all_epoch_avg_acc_seen,
             "epoch_acc_current": all_epoch_acc_current,
+            "epoch_avg_auroc_seen": all_epoch_avg_auroc_seen,
+            "epoch_auroc_current": all_epoch_auroc_current,
             "n_epochs": cfg.n_epochs,
             "buffer_type": cfg.buffer_type,
             "run_name": cfg.run_name,
@@ -481,13 +505,46 @@ def main(cfg):
     csv_path = f"{save_base}_per_epoch.csv"
     with open(csv_path, "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["experience_idx", "epoch_idx", "avg_acc_seen", "acc_current"])
-        for exp_idx, (seen_curve, cur_curve) in enumerate(
-            zip(all_epoch_avg_acc_seen, all_epoch_acc_current)
+        writer.writerow(
+            [
+                "experience_idx",
+                "epoch_idx",
+                "avg_acc_seen",
+                "acc_current",
+                "avg_auroc_seen",
+                "auroc_current",
+            ]
+        )
+        for exp_idx, (
+            seen_curve_acc,
+            cur_curve_acc,
+            seen_curve_auc,
+            cur_curve_auc,
+        ) in enumerate(
+            zip(
+                all_epoch_avg_acc_seen,
+                all_epoch_acc_current,
+                all_epoch_avg_auroc_seen,
+                all_epoch_auroc_current,
+            )
         ):
-            T = min(len(seen_curve), len(cur_curve))
+            T = min(
+                len(seen_curve_acc),
+                len(cur_curve_acc),
+                len(seen_curve_auc),
+                len(cur_curve_auc),
+            )
             for e in range(T):
-                writer.writerow([exp_idx, e, seen_curve[e], cur_curve[e]])
+                writer.writerow(
+                    [
+                        exp_idx,
+                        e,
+                        seen_curve_acc[e],
+                        cur_curve_acc[e],
+                        seen_curve_auc[e],
+                        cur_curve_auc[e],
+                    ]
+                )
     logging.info(f"Saved per-epoch curves to {csv_path}")
 
 
